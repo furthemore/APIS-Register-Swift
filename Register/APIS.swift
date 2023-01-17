@@ -3,6 +3,7 @@
 //  Register
 //
 
+import ComposableArchitecture
 import Dependencies
 import Foundation
 import IdentifiedCollections
@@ -71,6 +72,12 @@ struct TerminalCart: Equatable, Codable {
   }
 }
 
+struct RegisterRequest: Equatable, Codable {
+  @BindableState var terminalName = ""
+  @BindableState var host = ""
+  @BindableState var token = ""
+}
+
 struct ApisClient {
   static let logger = Logger(subsystem: "net.syfaro.Register", category: "APIS")
 
@@ -91,11 +98,11 @@ struct ApisClient {
     }
   }
 
-  var registerTerminal: (Config) async throws -> String
+  var registerTerminal: (RegisterRequest) async throws -> Config
   var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
 
-  private static func url(_ config: Config) throws -> URL {
-    guard let url = URL(string: config.host) else {
+  private static func url(_ host: String) throws -> URL {
+    guard let url = URL(string: host) else {
       throw ApisError.invalidHost
     }
 
@@ -105,13 +112,13 @@ struct ApisClient {
 
 extension ApisClient: DependencyKey {
   static let liveValue: ApisClient = Self(
-    registerTerminal: { config in
-      let url = try Self.url(config)
+    registerTerminal: { req in
+      let url = try Self.url(req.host)
       let endpoint = url.appending(path: "/terminal/register")
       Self.logger.debug("Attempting to register at \(endpoint, privacy: .public)")
 
       let jsonEncoder = JSONEncoder()
-      let httpBody = try jsonEncoder.encode(config)
+      let httpBody = try jsonEncoder.encode(req)
 
       var request = URLRequest(url: endpoint)
       request.setValue("application/json", forHTTPHeaderField: "content-type")
@@ -130,9 +137,9 @@ extension ApisClient: DependencyKey {
       }
 
       let jsonDecoder = JSONDecoder()
-      let key = try jsonDecoder.decode(String.self, from: data)
 
-      return key
+      let config = try jsonDecoder.decode(Config.self, from: data)
+      return config
     },
     subscribeToEvents: { config in
       let identifier = String(

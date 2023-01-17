@@ -10,7 +10,7 @@ import SwiftUI
 struct RegisterApp: App {
   var body: some Scene {
     WindowGroup {
-      ContentView(
+      RegSetupView(
         store: Store(
           initialState: .init(),
           reducer: RegFeature()
