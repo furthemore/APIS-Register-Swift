@@ -143,7 +143,16 @@ struct RegSetupFeature: ReducerProtocol {
             message: error.localizedDescription
           ))
         return .none
-      case .configAction(_):
+      case let .configAction(.scannerResult(.success(payload))):
+        return decodeQRCode(state: &state, payload: payload)
+      case let .configAction(.scannerResult(.failure(error))):
+        state.setAlert(
+          AlertContent(
+            title: "QR Code Error",
+            message: error.localizedDescription
+          ))
+        return .none
+      case .configAction:
         return .none
       case let .setErrorMessage(content):
         state.setAlert(content)
@@ -219,6 +228,32 @@ struct RegSetupFeature: ReducerProtocol {
   private func disconnect(state: inout State) -> EffectTask<Action> {
     state.isConnected = false
     return .cancel(id: SubID.self)
+  }
+
+  private func decodeQRCode(state: inout State, payload: String) -> EffectTask<Action> {
+    guard let data = payload.data(using: .utf8) else {
+      state.setAlert(AlertContent(title: "QR Code Error", message: "Not Valid UTF8"))
+      return .none
+    }
+
+    do {
+      let jsonDecoder = JSONDecoder()
+      let registerRequest = try jsonDecoder.decode(RegisterRequest.self, from: data)
+      state.configState.registerRequest = registerRequest
+      state.setAlert(
+        AlertContent(
+          title: "Imported QR Code",
+          message: "Successfully imported data."
+        ))
+      return disconnect(state: &state)
+    } catch {
+      state.setAlert(
+        AlertContent(
+          title: "QR Code Error",
+          message: error.localizedDescription
+        ))
+      return .none
+    }
   }
 }
 

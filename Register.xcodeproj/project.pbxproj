@@ -27,6 +27,7 @@
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
+		E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = E1DE8EB12977138B003795C2 /* CodeScanner */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +78,7 @@
 			files = (
 				E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */,
 				E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */,
+				E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,6 +233,7 @@
 			packageProductDependencies = (
 				E1327EDA29750ACB001DF7D6 /* ComposableArchitecture */,
 				E1327EED29762EE4001DF7D6 /* MQTTNIO */,
+				E1DE8EB12977138B003795C2 /* CodeScanner */,
 			);
 			productName = Register;
 			productReference = E1327EAC29750A7A001DF7D6 /* Register.app */;
@@ -307,6 +310,7 @@
 			packageReferences = (
 				E1327ED929750ACB001DF7D6 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */,
+				E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */,
 			);
 			productRefGroup = E1327EAD29750A7A001DF7D6 /* Products */;
 			projectDirPath = "";
@@ -524,6 +528,7 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -553,6 +558,7 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -705,6 +711,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/twostraws/CodeScanner";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -717,6 +731,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
 			productName = MQTTNIO;
+		};
+		E1DE8EB12977138B003795C2 /* CodeScanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */;
+			productName = CodeScanner;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

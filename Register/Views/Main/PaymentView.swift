@@ -9,35 +9,52 @@ import WebKit
 
 struct PaymentView: View {
   @Environment(\.dismiss) var dismiss
+  @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
   @Binding var webViewURL: URL
   @Binding var cart: TerminalCart?
 
   var body: some View {
-    TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-      WebView(url: webViewURL)
-        .ignoresSafeArea()
+    content
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(Register.themeColor)
+      .statusBarHidden()
+  }
 
-      VStack(spacing: 0) {
-        CurrentTimeView()
-          .foregroundColor(.white)
-          .onTapGesture(count: 5) {
-            dismiss()
-          }
-          .padding([.top], 16)
-          .frame(maxWidth: .infinity)
+  @ViewBuilder
+  var content: some View {
+    if horizontalSizeClass == .compact {
+      payment
+    } else {
+      TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
+        WebView(url: webViewURL)
+          .ignoresSafeArea()
 
-        if let cart = cart {
-          List {
-            paymentLineItems(cart)
-          }
-          .scrollContentBackground(.hidden)
-        }
+        payment
       }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Register.themeColor)
-    .statusBarHidden()
+  }
+
+  @ViewBuilder
+  var payment: some View {
+    VStack(spacing: 0) {
+      CurrentTimeView()
+        .foregroundColor(.white)
+        .onTapGesture(count: 5) {
+          dismiss()
+        }
+        .padding([.top], 16)
+        .frame(maxWidth: .infinity)
+
+      if let cart = cart {
+        List {
+          paymentLineItems(cart)
+        }
+        .scrollContentBackground(.hidden)
+      } else {
+        Spacer()
+      }
+    }
   }
 
   @ViewBuilder
@@ -99,5 +116,9 @@ struct PaymentView_Previews: PreviewProvider {
           total: 0
         )
       ))
+
+    PaymentView(
+      webViewURL: .constant(Register.fallbackURL),
+      cart: .constant(nil))
   }
 }

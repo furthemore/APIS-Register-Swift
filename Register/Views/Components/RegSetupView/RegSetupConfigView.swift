@@ -3,6 +3,7 @@
 //  Register
 //
 
+import CodeScanner
 import ComposableArchitecture
 import SwiftUI
 
@@ -13,6 +14,8 @@ struct RegSetupConfigFeature: ReducerProtocol {
     var registerRequest = RegisterRequest()
     var isLoading = false
 
+    var isPresentingScanner = false
+
     var isRegistrationDisabled: Bool {
       isLoading || !registerRequest.isReady
     }
@@ -20,6 +23,8 @@ struct RegSetupConfigFeature: ReducerProtocol {
 
   enum Action: BindableAction, Equatable {
     case binding(BindingAction<State>)
+    case showScanner(Bool)
+    case scannerResult(TaskResult<String>)
     case registerTerminal
     case registered(TaskResult<Config>)
   }
@@ -30,6 +35,12 @@ struct RegSetupConfigFeature: ReducerProtocol {
     Reduce { state, action in
       switch action {
       case .binding:
+        return .none
+      case let .showScanner(shouldShow):
+        state.isPresentingScanner = shouldShow
+        return .none
+      case .scannerResult:
+        state.isPresentingScanner = false
         return .none
       case .registerTerminal:
         state.isLoading = true
@@ -85,6 +96,12 @@ struct RegSetupConfigView: View {
         }
 
         Button {
+          viewStore.send(.showScanner(true))
+        } label: {
+          Text("Import QR Code")
+        }
+
+        Button {
           viewStore.send(.registerTerminal)
         } label: {
           HStack(spacing: 8) {
@@ -95,7 +112,24 @@ struct RegSetupConfigView: View {
             }
           }
         }.disabled(viewStore.isRegistrationDisabled)
-      }.disabled(viewStore.isLoading)
+      }
+      .disabled(viewStore.isLoading)
+      .sheet(
+        isPresented: viewStore.binding(
+          get: \.isPresentingScanner,
+          send: RegSetupConfigFeature.Action.showScanner
+        )
+      ) {
+        CodeScannerView(
+          codeTypes: [.qr],
+          simulatedData: Register.simulatedQRCode
+        ) {
+          viewStore.send(
+            .scannerResult(
+              TaskResult($0.map { $0.string })
+            ))
+        }
+      }
     }
   }
 }
