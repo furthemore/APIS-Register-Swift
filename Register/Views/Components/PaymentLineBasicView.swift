@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-struct PaymentLineBasic: View {
+struct PaymentLineBasicView: View {
   var lineName: String
   var price: Decimal
   
@@ -20,6 +20,6 @@ struct PaymentLineBasic: View {
 
 struct PaymentBasicLine_Previews: PreviewProvider {
   static var previews: some View {
-    PaymentLineBasic(lineName: "Line Item", price: 20)
+    PaymentLineBasicView(lineName: "Line Item", price: 20)
   }
 }

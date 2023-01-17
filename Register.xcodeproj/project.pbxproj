@@ -19,8 +19,8 @@
 		E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EDE29750F6C001DF7D6 /* ClosedView.swift */; };
 		E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE029751BB6001DF7D6 /* PaymentView.swift */; };
 		E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */; };
-		E1327EE52975B881001DF7D6 /* PaymentLineBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE42975B881001DF7D6 /* PaymentLineBadge.swift */; };
-		E1327EE72975BB73001DF7D6 /* PaymentLineBasic.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE62975BB73001DF7D6 /* PaymentLineBasic.swift */; };
+		E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */; };
+		E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */; };
 		E1327EE92975C1D6001DF7D6 /* TwoColumnLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */; };
 		E1327EEB29760AA9001DF7D6 /* ConfigLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
@@ -58,8 +58,8 @@
 		E1327EDE29750F6C001DF7D6 /* ClosedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedView.swift; sourceTree = "<group>"; };
 		E1327EE029751BB6001DF7D6 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
 		E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeView.swift; sourceTree = "<group>"; };
-		E1327EE42975B881001DF7D6 /* PaymentLineBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBadge.swift; sourceTree = "<group>"; };
-		E1327EE62975BB73001DF7D6 /* PaymentLineBasic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBasic.swift; sourceTree = "<group>"; };
+		E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBadgeView.swift; sourceTree = "<group>"; };
+		E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBasicView.swift; sourceTree = "<group>"; };
 		E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnLayout.swift; sourceTree = "<group>"; };
 		E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigLoader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,17 +115,11 @@
 			isa = PBXGroup;
 			children = (
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
-				E1327EB129750A7A001DF7D6 /* ContentView.swift */,
 				E1327EB329750A7B001DF7D6 /* Assets.xcassets */,
 				E1327EB529750A7B001DF7D6 /* Preview Content */,
 				E1327EDC29750B7F001DF7D6 /* APIS.swift */,
-				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
-				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
-				E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */,
-				E1327EE42975B881001DF7D6 /* PaymentLineBadge.swift */,
-				E1327EE62975BB73001DF7D6 /* PaymentLineBasic.swift */,
-				E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */,
+				E1327EEF29765CDF001DF7D6 /* Views */,
 			);
 			path = Register;
 			sourceTree = "<group>";
@@ -153,6 +147,44 @@
 				E1327ECC29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift */,
 			);
 			path = RegisterUITests;
+			sourceTree = "<group>";
+		};
+		E1327EEF29765CDF001DF7D6 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EF029765D08001DF7D6 /* Main */,
+				E1327EF129765D14001DF7D6 /* Components */,
+				E1327EF229765D29001DF7D6 /* Layouts */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E1327EF029765D08001DF7D6 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EB129750A7A001DF7D6 /* ContentView.swift */,
+				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
+				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		E1327EF129765D14001DF7D6 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */,
+				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
+				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		E1327EF229765D29001DF7D6 /* Layouts */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */,
+			);
+			path = Layouts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -295,9 +327,9 @@
 			files = (
 				E1327EEB29760AA9001DF7D6 /* ConfigLoader.swift in Sources */,
 				E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */,
-				E1327EE72975BB73001DF7D6 /* PaymentLineBasic.swift in Sources */,
+				E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */,
 				E1327EB229750A7A001DF7D6 /* ContentView.swift in Sources */,
-				E1327EE52975B881001DF7D6 /* PaymentLineBadge.swift in Sources */,
+				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APIS.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1327EB029750A7A001DF7D6 /* RegisterApp.swift in Sources */,

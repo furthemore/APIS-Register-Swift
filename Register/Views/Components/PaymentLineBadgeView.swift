@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-struct PaymentLineBadge: View {
+struct PaymentLineBadgeView: View {
   var name: String
   var badgeName: String
   var levelName: String
@@ -30,7 +30,7 @@ struct PaymentLineBadge: View {
 
 struct PaymentBadgeLine_Previews: PreviewProvider {
   static var previews: some View {
-    PaymentLineBadge(
+    PaymentLineBadgeView(
       name: "First Last",
       badgeName: "Fancy Name",
       levelName: "Sponsor",

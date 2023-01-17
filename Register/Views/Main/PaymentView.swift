@@ -68,12 +68,12 @@ struct PaymentView: View {
     }
     
     Section(header: Text("Donations").foregroundColor(.white)) {
-      PaymentLineBasic(lineName: "Charity Donation", price: cart.charityDonation)
-      PaymentLineBasic(lineName: "Organization Donation", price: cart.organizationDonation)
+      PaymentLineBasicView(lineName: "Charity Donation", price: cart.charityDonation)
+      PaymentLineBasicView(lineName: "Organization Donation", price: cart.organizationDonation)
     }
     
     Section {
-      PaymentLineBasic(lineName: "Total", price: cart.total)
+      PaymentLineBasicView(lineName: "Total", price: cart.total)
     }
       .bold()
   }
@@ -84,7 +84,7 @@ struct PaymentView: View {
       Text("No badges in cart").foregroundColor(.secondary)
     } else {
       ForEach(cart.badges) { badge in
-        PaymentLineBadge(
+        PaymentLineBadgeView(
           name: "\(badge.firstName) \(badge.lastName)",
           badgeName: badge.badgeName,
           levelName: badge.effectiveLevelName,
