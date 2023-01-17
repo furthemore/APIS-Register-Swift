@@ -31,7 +31,7 @@ struct ClosedView: View {
     .padding()
     .foregroundColor(.white)
     .bold()
-    .background(Color(red: 0, green: 153 / 255, blue: 204 / 255))
+    .background(Register.themeColor)
     .statusBar(hidden: true)
   }
 }
