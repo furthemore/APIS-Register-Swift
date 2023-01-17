@@ -65,6 +65,7 @@ struct RegSetupConfigView: View {
           Text("Terminal Name")
         }
         .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
 
         TextField(
           text: viewStore.binding(\.registerRequest.$host),
@@ -74,6 +75,7 @@ struct RegSetupConfigView: View {
         }
         .keyboardType(.URL)
         .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
 
         SecureField(
           text: viewStore.binding(\.registerRequest.$token),

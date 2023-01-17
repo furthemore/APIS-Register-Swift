@@ -168,16 +168,10 @@ extension ApisClient: DependencyKey {
       return config
     },
     subscribeToEvents: { config in
-      let identifier = String(
-        config.terminalName.unicodeScalars.filter {
-          CharacterSet.alphanumerics.contains($0)
-        }
-      ).lowercased()
-
       let client = MQTTClient(
-        host: "192.168.1.175",
-        port: 1883,
-        identifier: identifier,
+        host: config.mqttHost,
+        port: config.mqttPort,
+        identifier: config.terminalName,
         eventLoopGroupProvider: .createNew
       )
 
@@ -185,10 +179,10 @@ extension ApisClient: DependencyKey {
         try await client.connect()
         Self.logger.debug("Connected to MQTT server")
 
-        let topic = "register/\(identifier)"
+        let topic = "register/\(config.terminalName)"
         Self.logger.debug("Subscribing to MQTT topic: \(topic, privacy: .public)")
         let subscription = MQTTSubscribeInfo(
-          topicFilter: "register/\(identifier)", qos: .atLeastOnce)
+          topicFilter: "register/\(config.terminalName)", qos: .atLeastOnce)
         _ = try await client.subscribe(to: [subscription])
         Self.logger.debug("Created MQTT subscription")
 

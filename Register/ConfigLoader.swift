@@ -13,11 +13,15 @@ struct Config: Equatable, Codable {
   var key: String
   var webViewURL: URL?
 
+  var mqttHost: String
+  var mqttPort: Int
+
   var urlOrFallback: URL {
     webViewURL ?? Register.fallbackURL
   }
 
-  static let empty = Self(terminalName: "", host: "", token: "", key: "", webViewURL: nil)
+  static let empty = Self(
+    terminalName: "", host: "", token: "", key: "", webViewURL: nil, mqttHost: "", mqttPort: -1)
 }
 
 struct ConfigLoader {
