@@ -7,58 +7,37 @@ import ComposableArchitecture
 import SwiftUI
 import WebKit
 
-struct PayFeature: ReducerProtocol {
-  struct State: Equatable {
-    var webViewURL: URL = URL(string: "https://www.google.com")!
-
-    var cart: TerminalCart? = nil
-  }
-
-  enum Action: Equatable {
-    case updateCart(TerminalCart)
-  }
-
-  func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
-    switch action {
-    case .updateCart(let cart):
-      state.cart = cart
-      return .none
-    }
-  }
-}
-
 struct PaymentView: View {
   @Environment(\.dismiss) var dismiss
 
-  let store: StoreOf<PayFeature>
+  @Binding var webViewURL: URL
+  @Binding var cart: TerminalCart?
 
   var body: some View {
-    WithViewStore(store) { viewStore in
-      TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        WebView(url: viewStore.webViewURL)
-          .ignoresSafeArea()
+    TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
+      WebView(url: webViewURL)
+        .ignoresSafeArea()
 
-        VStack(spacing: 0) {
-          CurrentTimeView()
-            .foregroundColor(.white)
-            .onTapGesture(count: 5) {
-              dismiss()
-            }
-            .padding([.top], 16)
-            .frame(maxWidth: .infinity)
-
-          if let cart = viewStore.cart {
-            List {
-              paymentLineItems(cart)
-            }
-            .scrollContentBackground(.hidden)
+      VStack(spacing: 0) {
+        CurrentTimeView()
+          .foregroundColor(.white)
+          .onTapGesture(count: 5) {
+            dismiss()
           }
+          .padding([.top], 16)
+          .frame(maxWidth: .infinity)
+
+        if let cart = cart {
+          List {
+            paymentLineItems(cart)
+          }
+          .scrollContentBackground(.hidden)
         }
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .background(Register.themeColor)
-      .statusBarHidden()
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Register.themeColor)
+    .statusBarHidden()
   }
 
   @ViewBuilder
@@ -111,9 +90,14 @@ struct WebView: UIViewRepresentable {
 struct PaymentView_Previews: PreviewProvider {
   static var previews: some View {
     PaymentView(
-      store: Store(
-        initialState: PayFeature.State(),
-        reducer: PayFeature()
+      webViewURL: .constant(Register.fallbackURL),
+      cart: .constant(
+        .init(
+          badges: .init(),
+          charityDonation: 0,
+          organizationDonation: 0,
+          total: 0
+        )
       ))
   }
 }

@@ -11,8 +11,13 @@ struct Config: Equatable, Codable {
   var host: String
   var token: String
   var key: String
+  var webViewURL: URL?
 
-  static let empty = Self(terminalName: "", host: "", token: "", key: "")
+  var urlOrFallback: URL {
+    webViewURL ?? Register.fallbackURL
+  }
+
+  static let empty = Self(terminalName: "", host: "", token: "", key: "", webViewURL: nil)
 }
 
 struct ConfigLoader {

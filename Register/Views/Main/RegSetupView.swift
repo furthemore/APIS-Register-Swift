@@ -10,31 +10,28 @@ struct RegFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
-    var alertState: AlertState<Action>? = nil
-
     var isLoadingConfig: Bool = true
-    var config: Config = Config.empty
+    private(set) var config: Config = Config.empty
 
     var isConnected: Bool = false
     var lastUpdate: Date? = nil
 
-    var isAcceptingPayments: Bool = false
-    var isClosed: Bool = false
-
-    var cart: TerminalCart = .empty
+    private(set) var isAcceptingPayments: Bool = false
+    private(set) var isClosed: Bool = false
 
     var configState: RegConfigFeature.State = .init()
+    var cart: TerminalCart? = nil
 
-    var paymentState: PayFeature.State = .init(
-      webViewURL: URL(string: "https://furthemore.org/code-of-conduct/")!
-    )
+    var alertState: AlertState<Action>? = nil
 
-    static func isValidHost(host: String) -> Bool {
-      guard let url = URL(string: host) else {
-        return false
-      }
+    mutating func setMode(_ mode: Mode) {
+      isClosed = mode == .close
+      isAcceptingPayments = mode == .acceptPayments
+    }
 
-      return UIApplication.shared.canOpenURL(url)
+    mutating func setConfig(_ config: Config) {
+      self.config = config
+      configState.registerRequest = .init(config: config)
     }
   }
 
@@ -55,17 +52,20 @@ struct RegFeature: ReducerProtocol {
     }
   }
 
+  enum Mode: Equatable {
+    case acceptPayments, close, setup
+  }
+
   enum Action: Equatable {
     case appeared
     case configLoaded(Config)
-    case showConfig, acceptPayments, closeTerminal
+    case terminalEvent(TerminalEvent)
+    case updateStatus(Bool, Date)
+    case setMode(Mode)
+    case configAction(RegConfigFeature.Action)
     case setErrorMessage(AlertContent?)
     case alertDismissed
-    case updateStatus(Bool, Date)
-    case terminalEvent(TerminalEvent)
-    case configAction(RegConfigFeature.Action)
-    case paymentAction(PayFeature.Action)
-    case connect
+    case ignore
   }
 
   private enum SubID {}
@@ -83,127 +83,43 @@ struct RegFeature: ReducerProtocol {
           return .configLoaded(config ?? Config.empty)
         }
       case let .configLoaded(config):
-        state.config = config
-        state.configState.registerRequest = .init(config: config)
+        state.setConfig(config)
         state.isLoadingConfig = false
         if config != Config.empty {
-          return .task {
-            return .connect
-          }
+          return connect(config: state.config)
         } else {
           return .none
         }
-      case .showConfig:
-        state.isClosed = false
-        state.isAcceptingPayments = false
+      case .terminalEvent(.open):
+        state.setMode(.acceptPayments)
         return .none
-      case .acceptPayments:
-        state.isClosed = false
-        state.isAcceptingPayments = true
+      case .terminalEvent(.close):
+        state.setMode(.close)
         return .none
-      case .closeTerminal:
-        state.isClosed = true
-        state.isAcceptingPayments = false
+      case .terminalEvent(.clearCart):
+        state.cart = nil
         return .none
-      case .connect:
-        let config = state.config
-        return .run { send in
-          do {
-            let (client, listener) = try await apis.subscribeToEvents(config)
-            await send(.updateStatus(true, Date()))
-
-            let jsonDecoder = JSONDecoder()
-
-            await withTaskCancellationHandler {
-              for await result in listener {
-                switch result {
-                case .success(let publish):
-                  await send(.updateStatus(true, Date()))
-
-                  var buffer = publish.payload
-                  guard let data = buffer.readData(length: buffer.readableBytes) else {
-                    continue
-                  }
-
-                  do {
-                    let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
-                    await send(.terminalEvent(event), animation: .easeInOut)
-                  } catch {
-                    dump(error)
-                    await send(
-                      .setErrorMessage(
-                        AlertContent(
-                          title: "Unknown Event",
-                          message: error.localizedDescription
-                        )))
-                  }
-                case .failure(let error):
-                  await send(
-                    .setErrorMessage(
-                      AlertContent(
-                        title: "Error",
-                        message: error.localizedDescription
-                      )))
-                }
-              }
-            } onCancel: {
-              try! client.syncShutdownGracefully()
-            }
-          } catch {
-            await send(
-              .setErrorMessage(
-                AlertContent(
-                  title: "Error",
-                  message: error.localizedDescription
-                )))
-          }
-        }
-        .cancellable(id: SubID.self, cancelInFlight: true)
-      case let .setErrorMessage(.some(content)):
-        state.alertState = content.alertState
+      case let .terminalEvent(.updateCart(cart)):
+        state.cart = cart
         return .none
-      case .setErrorMessage(_):
-        state.alertState = nil
-        return .none
-      case .alertDismissed:
-        state.alertState = nil
-        return .none
+      case .terminalEvent(.processPayment):
+        fatalError("unimplemented process payment")
       case let .updateStatus(connected, lastUpdate):
         state.isConnected = connected
         state.lastUpdate = lastUpdate
         return .none
-      case let .terminalEvent(event):
-        switch event {
-        case .open:
-          state.isClosed = false
-          state.isAcceptingPayments = true
-        case .close:
-          state.isClosed = true
-          state.isAcceptingPayments = false
-        case .clearCart:
-          state.paymentState.cart = nil
-        case .updateCart(let cart):
-          state.paymentState.cart = cart
-        default:
-          fatalError("unimplemented event")
-        }
-        return .none
-      case .paymentAction:
-        return .none
-      case .configAction(.registerTerminal):
+      case let .setMode(mode):
+        state.setMode(mode)
         return .none
       case let .configAction(.registered(.success(config))):
-        state.config = config
+        state.setConfig(config)
         state.alertState =
           AlertContent(
             title: "Registration Complete",
             message: "Successfully registered \(config.terminalName)"
           ).alertState
-        return .task {
-          return .connect
-        }
+        return connect(config: state.config)
       case let .configAction(.registered(.failure(error))):
-        dump(error)
         state.alertState =
           AlertContent(
             title: "Registration Error",
@@ -212,8 +128,70 @@ struct RegFeature: ReducerProtocol {
         return .none
       case .configAction(_):
         return .none
+      case let .setErrorMessage(content):
+        state.alertState = content?.alertState
+        return .none
+      case .alertDismissed:
+        state.alertState = nil
+        return .none
+      case .ignore:
+        return .none
       }
     }
+  }
+
+  private func connect(config: Config) -> EffectTask<Action> {
+    return .run { send in
+      do {
+        let (client, listener) = try await apis.subscribeToEvents(config)
+        await send(.updateStatus(true, Date()))
+
+        let jsonDecoder = JSONDecoder()
+
+        await withTaskCancellationHandler {
+          for await result in listener {
+            switch result {
+            case .success(let publish):
+              await send(.updateStatus(true, Date()))
+
+              var buffer = publish.payload
+              guard let data = buffer.readData(length: buffer.readableBytes) else {
+                continue
+              }
+
+              do {
+                let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
+                await send(.terminalEvent(event), animation: .easeInOut)
+              } catch {
+                await send(
+                  .setErrorMessage(
+                    AlertContent(
+                      title: "Unknown Event",
+                      message: error.localizedDescription
+                    )))
+              }
+            case .failure(let error):
+              await send(
+                .setErrorMessage(
+                  AlertContent(
+                    title: "Error",
+                    message: error.localizedDescription
+                  )))
+            }
+          }
+        } onCancel: {
+          try! client.syncShutdownGracefully()
+        }
+      } catch {
+        await send(
+          .setErrorMessage(
+            AlertContent(
+              title: "Error",
+              message: error.localizedDescription
+            )))
+      }
+    }
+    .cancellable(id: SubID.self, cancelInFlight: true)
   }
 }
 
@@ -225,8 +203,14 @@ struct RegSetupView: View {
       WithViewStore(store) { viewStore in
         Form {
           RegSetupStatusView(
-            isConnected: viewStore.isConnected,
-            lastUpdated: viewStore.lastUpdate
+            isConnected: viewStore.binding(
+              get: \.isConnected,
+              send: RegFeature.Action.ignore
+            ),
+            lastUpdated: viewStore.binding(
+              get: \.lastUpdate,
+              send: RegFeature.Action.ignore
+            )
           )
 
           RegSetupConfigView(
@@ -242,21 +226,26 @@ struct RegSetupView: View {
         .fullScreenCover(
           isPresented: viewStore.binding(
             get: \.isClosed,
-            send: .showConfig
+            send: .setMode(.setup)
           ),
           content: ClosedView.init
         )
         .fullScreenCover(
           isPresented: viewStore.binding(
             get: \.isAcceptingPayments,
-            send: .showConfig
+            send: .setMode(.setup)
           ),
           content: {
             PaymentView(
-              store: store.scope(
-                state: \.paymentState,
-                action: RegFeature.Action.paymentAction
-              ))
+              webViewURL: viewStore.binding(
+                get: \.config.urlOrFallback,
+                send: RegFeature.Action.ignore
+              ),
+              cart: viewStore.binding(
+                get: \.cart,
+                send: RegFeature.Action.ignore
+              )
+            )
           }
         )
         .onAppear {
@@ -273,13 +262,13 @@ struct RegSetupView: View {
   func launch(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
     Section("Launch") {
       Button {
-        viewStore.send(.closeTerminal)
+        viewStore.send(.setMode(.close))
       } label: {
         Label("Close Terminal", systemImage: "xmark.square")
       }
 
       Button {
-        viewStore.send(.acceptPayments)
+        viewStore.send(.setMode(.acceptPayments))
       } label: {
         Label("Accept Payments", systemImage: "creditcard")
       }

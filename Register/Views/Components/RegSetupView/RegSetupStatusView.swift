@@ -6,12 +6,12 @@
 import SwiftUI
 
 struct RegSetupStatusView: View {
-  var isConnected = false
-  var lastUpdated: Date? = nil
+  @Binding var isConnected: Bool
+  @Binding var lastUpdated: Date?
 
   var body: some View {
     Section("Status") {
-      Toggle(isOn: .constant(isConnected)) {
+      Toggle(isOn: $isConnected) {
         Text("Connected")
       }
 
@@ -34,15 +34,18 @@ struct RegSetupStatusView: View {
 struct RegSetupStatusView_Previews: PreviewProvider {
   static var previews: some View {
     Form {
-      RegSetupStatusView()
+      RegSetupStatusView(
+        isConnected: .constant(false),
+        lastUpdated: .constant(nil)
+      )
     }
     .previewLayout(.fixed(width: 400, height: 200))
     .previewDisplayName("Disconnected")
 
     Form {
       RegSetupStatusView(
-        isConnected: true,
-        lastUpdated: Date(timeIntervalSince1970: 1_673_932_324)
+        isConnected: .constant(true),
+        lastUpdated: .constant(Date(timeIntervalSince1970: 1_673_932_324))
       )
     }
     .previewLayout(.fixed(width: 400, height: 200))
