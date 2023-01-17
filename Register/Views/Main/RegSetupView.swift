@@ -22,7 +22,7 @@ struct RegSetupFeature: ReducerProtocol {
     var configState: RegSetupConfigFeature.State = .init()
     var cart: TerminalCart? = nil
 
-    var alertState: AlertState<Action>? = nil
+    private(set) var alertState: AlertState<Action>? = nil
 
     mutating func setMode(_ mode: Mode) {
       isClosed = mode == .close
@@ -32,6 +32,10 @@ struct RegSetupFeature: ReducerProtocol {
     mutating func setConfig(_ config: Config) {
       self.config = config
       configState.registerRequest = .init(config: config)
+    }
+
+    mutating func setAlert(_ content: AlertContent?) {
+      alertState = content?.alertState
     }
   }
 
@@ -95,11 +99,11 @@ struct RegSetupFeature: ReducerProtocol {
           return .none
         }
       case let .configLoaded(.failure(error)):
-        state.alertState =
+        state.setAlert(
           AlertContent(
             title: "Config Load Error",
             message: error.localizedDescription
-          ).alertState
+          ))
         return .none
       case .terminalEvent(.open):
         state.setMode(.acceptPayments)
@@ -122,33 +126,38 @@ struct RegSetupFeature: ReducerProtocol {
       case let .setMode(mode):
         state.setMode(mode)
         return .none
+      case .configAction(.registerTerminal):
+        return disconnect(state: &state)
       case let .configAction(.registered(.success(config))):
         state.setConfig(config)
-        state.alertState =
+        state.setAlert(
           AlertContent(
             title: "Registration Complete",
             message: "Successfully registered \(config.terminalName)"
-          ).alertState
+          ))
         return connect(config: state.config)
       case let .configAction(.registered(.failure(error))):
-        state.alertState =
+        state.setAlert(
           AlertContent(
             title: "Registration Error",
             message: error.localizedDescription
-          ).alertState
+          ))
         return .none
       case .configAction(_):
         return .none
       case let .setErrorMessage(content):
-        state.alertState = content?.alertState
+        state.setAlert(content)
         return .none
       case .alertDismissed:
-        state.alertState = nil
+        state.setAlert(nil)
         return .none
       case .ignore:
         return .none
       }
     }
+    #if DEBUG
+      ._printChanges()
+    #endif
   }
 
   private func connect(config: Config) -> EffectTask<Action> {
@@ -160,6 +169,7 @@ struct RegSetupFeature: ReducerProtocol {
         let jsonDecoder = JSONDecoder()
 
         await withTaskCancellationHandler {
+          Register.logger.debug("Stream was started")
           for await result in listener {
             switch result {
             case .success(let publish):
@@ -191,6 +201,7 @@ struct RegSetupFeature: ReducerProtocol {
             }
           }
         } onCancel: {
+          Register.logger.info("Stream was cancelled")
           try! client.syncShutdownGracefully()
         }
       } catch {
@@ -203,6 +214,11 @@ struct RegSetupFeature: ReducerProtocol {
       }
     }
     .cancellable(id: SubID.self, cancelInFlight: true)
+  }
+
+  private func disconnect(state: inout State) -> EffectTask<Action> {
+    state.isConnected = false
+    return .cancel(id: SubID.self)
   }
 }
 

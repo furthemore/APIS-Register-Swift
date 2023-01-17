@@ -22,12 +22,11 @@ struct Config: Equatable, Codable {
 
 struct ConfigLoader {
   private static let logger = Logger(subsystem: "net.syfaro.Register", category: "ConfigLoader")
+  private static let fileManager = FileManager.default
 
   enum ConfigError: Error {
     case missingDocumentDirectory
   }
-
-  private static let fileManager = FileManager.default
 
   private static func configFilePath() throws -> URL {
     guard let url = fileManager.urls(for: .documentDirectory, in: .userDomainMask).last else {
