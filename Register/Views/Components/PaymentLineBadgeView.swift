@@ -10,19 +10,19 @@ struct PaymentLineBadgeView: View {
   var badgeName: String
   var levelName: String
   var price: Decimal
-  
+
   var body: some View {
     HStack {
       VStack(alignment: .leading) {
         Text(name)
         Text(levelName + " Registration")
-        
+
         Text("\"\(badgeName)\"")
           .bold()
       }
-      
+
       Spacer()
-      
+
       Text(price, format: .currency(code: "USD"))
     }
   }

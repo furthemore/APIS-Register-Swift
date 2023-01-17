@@ -7,7 +7,7 @@ import SwiftUI
 
 struct ClosedView: View {
   @Environment(\.dismiss) var dismiss
-  
+
   var dateFormatter: DateFormatter {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "hh:mm a"
@@ -21,18 +21,18 @@ struct ClosedView: View {
       Text("Next Register, Please")
         .modifier(FitToWidth())
     }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .overlay(alignment: .bottom) {
-        CurrentTimeView()
-          .onTapGesture(count: 5) {
-            dismiss()
-          }
-      }
-      .padding()
-      .foregroundColor(.white)
-      .bold()
-      .background(Color(red: 0, green: 153 / 255, blue: 204 / 255))
-      .statusBar(hidden: true)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .overlay(alignment: .bottom) {
+      CurrentTimeView()
+        .onTapGesture(count: 5) {
+          dismiss()
+        }
+    }
+    .padding()
+    .foregroundColor(.white)
+    .bold()
+    .background(Color(red: 0, green: 153 / 255, blue: 204 / 255))
+    .statusBar(hidden: true)
   }
 }
 

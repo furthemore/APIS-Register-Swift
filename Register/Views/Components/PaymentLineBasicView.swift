@@ -8,7 +8,7 @@ import SwiftUI
 struct PaymentLineBasicView: View {
   var lineName: String
   var price: Decimal
-  
+
   var body: some View {
     HStack {
       Text(lineName)

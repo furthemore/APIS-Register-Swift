@@ -3,8 +3,8 @@
 //  Register
 //
 
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct RegFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
@@ -13,50 +13,46 @@ struct RegFeature: ReducerProtocol {
     var isLoadingConfig: Bool = true
     var isRegistering: Bool = false
     var alertState: AlertState<Action>? = nil
-    
+
     var isConnected: Bool = false
     var lastUpdate: Date? = nil
 
     var hasChangedConfig: Bool = false
     var config: Config = Config.empty
-    
+
     var isAcceptingPayments: Bool = false
     var isClosed: Bool = false
-    
+
     var cart: TerminalCart = .empty
-    
+
     var paymentState: PayFeature.State = .init(
       webViewURL: URL(string: "https://furthemore.org/code-of-conduct/")!
     )
-    
+
     var registrationDisabled: Bool {
-      return isLoadingConfig ||
-        config.terminalName.isEmpty ||
-        config.host.isEmpty ||
-        config.token.isEmpty ||
-        !hasChangedConfig ||
-        isRegistering ||
-        !Self.isValidHost(host: config.host)
+      return isLoadingConfig || config.terminalName.isEmpty || config.host.isEmpty
+        || config.token.isEmpty || !hasChangedConfig || isRegistering
+        || !Self.isValidHost(host: config.host)
     }
-    
+
     var isLoading: Bool {
       return isLoadingConfig || isRegistering
     }
-    
+
     static func isValidHost(host: String) -> Bool {
       guard let url = URL(string: host) else {
         return false
       }
-      
+
       return UIApplication.shared.canOpenURL(url)
     }
   }
-  
+
   struct AlertContent: Equatable {
     var title: String
     var message: String
   }
-  
+
   enum Action: Equatable {
     case appeared
     case configLoaded(Config)
@@ -73,9 +69,9 @@ struct RegFeature: ReducerProtocol {
     case terminalEvent(TerminalEvent)
     case paymentAction(PayFeature.Action)
   }
-  
+
   private enum SubID {}
-  
+
   func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     dump(action)
     switch action {
@@ -123,10 +119,11 @@ struct RegFeature: ReducerProtocol {
           try await ConfigLoader.saveConfig(config)
           return .registrationComplete
         } catch {
-          return .setErrorMessage(AlertContent(
-            title: "Error",
-            message: error.localizedDescription
-          ))
+          return .setErrorMessage(
+            AlertContent(
+              title: "Error",
+              message: error.localizedDescription
+            ))
         }
       }
     case .registrationComplete:
@@ -136,9 +133,9 @@ struct RegFeature: ReducerProtocol {
         do {
           let (client, listener) = try await apis.subscribeToEvents(config)
           await send(.updateStatus(true, Date()))
-          
+
           let jsonDecoder = JSONDecoder()
-          
+
           await withTaskCancellationHandler {
             for await result in listener {
               switch result {
@@ -150,28 +147,32 @@ struct RegFeature: ReducerProtocol {
                   print("got payload with no data")
                   continue
                 }
-                
+
                 #if DEBUG
-                if let str = String(data: data, encoding: .utf8) {
-                  print("got data: \(str)")
-                }
+                  if let str = String(data: data, encoding: .utf8) {
+                    print("got data: \(str)")
+                  }
                 #endif
-                
+
                 do {
                   let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
                   await send(.terminalEvent(event), animation: .easeInOut)
                 } catch {
                   dump(error)
-                  await send(.setErrorMessage(AlertContent(
-                    title: "Unknown Event",
-                    message: error.localizedDescription
-                  )))
+                  await send(
+                    .setErrorMessage(
+                      AlertContent(
+                        title: "Unknown Event",
+                        message: error.localizedDescription
+                      )))
                 }
               case .failure(let error):
-                await send(.setErrorMessage(AlertContent(
-                  title: "Error",
-                  message: error.localizedDescription
-                )))
+                await send(
+                  .setErrorMessage(
+                    AlertContent(
+                      title: "Error",
+                      message: error.localizedDescription
+                    )))
               }
             }
           } onCancel: {
@@ -180,10 +181,12 @@ struct RegFeature: ReducerProtocol {
           }
         } catch {
           dump(error)
-          await send(.setErrorMessage(AlertContent(
-            title: "Error",
-            message: error.localizedDescription
-          )))
+          await send(
+            .setErrorMessage(
+              AlertContent(
+                title: "Error",
+                message: error.localizedDescription
+              )))
         }
       }.cancellable(id: SubID.self, cancelInFlight: true)
     case let .setErrorMessage(.some(content)):
@@ -236,7 +239,7 @@ struct RegFeature: ReducerProtocol {
 
 struct ContentView: View {
   let store: StoreOf<RegFeature>
-  
+
   var body: some View {
     NavigationStack {
       WithViewStore(store) { viewStore in
@@ -245,47 +248,50 @@ struct ContentView: View {
           config(viewStore)
           launch(viewStore)
         }
-          .navigationTitle("Registration App Setup")
-          .alert(store.scope(state: \.alertState), dismiss: .alertDismissed)
-          .fullScreenCover(
-            isPresented: viewStore.binding(
-              get: \.isClosed,
-              send: .showConfig
-            ),
-            content: ClosedView.init
-          )
-          .fullScreenCover(
-            isPresented: viewStore.binding(
-              get: \.isAcceptingPayments,
-              send: .showConfig
-            ),
-            content: {
-              PaymentView(store: store.scope(
+        .navigationTitle("Registration App Setup")
+        .alert(store.scope(state: \.alertState), dismiss: .alertDismissed)
+        .fullScreenCover(
+          isPresented: viewStore.binding(
+            get: \.isClosed,
+            send: .showConfig
+          ),
+          content: ClosedView.init
+        )
+        .fullScreenCover(
+          isPresented: viewStore.binding(
+            get: \.isAcceptingPayments,
+            send: .showConfig
+          ),
+          content: {
+            PaymentView(
+              store: store.scope(
                 state: \.paymentState,
                 action: RegFeature.Action.paymentAction
               ))
-            }
-          )
-          .onAppear {
-            if viewStore.isLoadingConfig {
-              viewStore.send(.appeared)
-            }
           }
+        )
+        .onAppear {
+          if viewStore.isLoadingConfig {
+            viewStore.send(.appeared)
+          }
+        }
       }
     }
-      .statusBar(hidden: true)
+    .statusBar(hidden: true)
   }
-  
+
   @ViewBuilder
   func status(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
     Section("Status") {
-      Toggle(isOn: viewStore.binding(
-        get: \.isConnected,
-        send: .disabled
-      )) {
+      Toggle(
+        isOn: viewStore.binding(
+          get: \.isConnected,
+          send: .disabled
+        )
+      ) {
         Text("Connected")
       }
-      
+
       HStack {
         Text("Last Update")
         Spacer()
@@ -296,10 +302,10 @@ struct ContentView: View {
         }
       }
     }
-      .disabled(true)
-      .foregroundColor(.secondary)
+    .disabled(true)
+    .foregroundColor(.secondary)
   }
-  
+
   @ViewBuilder
   func config(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
     Section("Config") {
@@ -312,7 +318,7 @@ struct ContentView: View {
       ) {
         Text("Terminal Name")
       }
-      
+
       TextField(
         text: viewStore.binding(
           get: \.config.host,
@@ -322,9 +328,8 @@ struct ContentView: View {
       ) {
         Text("Host")
       }
-        .keyboardType(.URL)
-        
-      
+      .keyboardType(.URL)
+
       SecureField(
         text: viewStore.binding(
           get: \.config.token,
@@ -334,7 +339,7 @@ struct ContentView: View {
       ) {
         Text("Token")
       }
-      
+
       SecureField(
         text: viewStore.binding(
           get: \.config.key,
@@ -344,25 +349,25 @@ struct ContentView: View {
       ) {
         Text("API Key")
       }
-        .disabled(true)
-        .foregroundColor(.secondary)
+      .disabled(true)
+      .foregroundColor(.secondary)
 
       Button {
         viewStore.send(.registerTerminal)
       } label: {
         HStack(spacing: 8) {
           Label("Register Terminal", systemImage: "cloud.bolt")
-          
+
           if viewStore.isLoading {
             ProgressView()
           }
         }
       }
-        .disabled(viewStore.registrationDisabled)
+      .disabled(viewStore.registrationDisabled)
     }
-      .disabled(viewStore.isLoadingConfig)
+    .disabled(viewStore.isLoadingConfig)
   }
-  
+
   @ViewBuilder
   func launch(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
     Section("Launch") {
@@ -371,7 +376,7 @@ struct ContentView: View {
       } label: {
         Label("Close Terminal", systemImage: "xmark.square")
       }
-      
+
       Button {
         viewStore.send(.acceptPayments)
       } label: {
@@ -383,9 +388,10 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
   static var previews: some View {
-    ContentView(store: Store(
-      initialState: .init(),
-      reducer: RegFeature()
-    ))
+    ContentView(
+      store: Store(
+        initialState: .init(),
+        reducer: RegFeature()
+      ))
   }
 }
