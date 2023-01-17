@@ -6,7 +6,7 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct RegFeature: ReducerProtocol {
+struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
@@ -19,7 +19,7 @@ struct RegFeature: ReducerProtocol {
     private(set) var isAcceptingPayments: Bool = false
     private(set) var isClosed: Bool = false
 
-    var configState: RegConfigFeature.State = .init()
+    var configState: RegSetupConfigFeature.State = .init()
     var cart: TerminalCart? = nil
 
     var alertState: AlertState<Action>? = nil
@@ -62,7 +62,7 @@ struct RegFeature: ReducerProtocol {
     case terminalEvent(TerminalEvent)
     case updateStatus(Bool, Date)
     case setMode(Mode)
-    case configAction(RegConfigFeature.Action)
+    case configAction(RegSetupConfigFeature.Action)
     case setErrorMessage(AlertContent?)
     case alertDismissed
     case ignore
@@ -72,7 +72,7 @@ struct RegFeature: ReducerProtocol {
 
   var body: some ReducerProtocol<State, Action> {
     Scope(state: \.configState, action: /Action.configAction) {
-      RegConfigFeature()
+      RegSetupConfigFeature()
     }
 
     Reduce { state, action in
@@ -196,7 +196,7 @@ struct RegFeature: ReducerProtocol {
 }
 
 struct RegSetupView: View {
-  let store: StoreOf<RegFeature>
+  let store: StoreOf<RegSetupFeature>
 
   var body: some View {
     NavigationStack {
@@ -205,18 +205,18 @@ struct RegSetupView: View {
           RegSetupStatusView(
             isConnected: viewStore.binding(
               get: \.isConnected,
-              send: RegFeature.Action.ignore
+              send: RegSetupFeature.Action.ignore
             ),
             lastUpdated: viewStore.binding(
               get: \.lastUpdate,
-              send: RegFeature.Action.ignore
+              send: RegSetupFeature.Action.ignore
             )
           )
 
           RegSetupConfigView(
             store: store.scope(
               state: \.configState,
-              action: RegFeature.Action.configAction
+              action: RegSetupFeature.Action.configAction
             ))
 
           launch(viewStore)
@@ -239,11 +239,11 @@ struct RegSetupView: View {
             PaymentView(
               webViewURL: viewStore.binding(
                 get: \.config.urlOrFallback,
-                send: RegFeature.Action.ignore
+                send: RegSetupFeature.Action.ignore
               ),
               cart: viewStore.binding(
                 get: \.cart,
-                send: RegFeature.Action.ignore
+                send: RegSetupFeature.Action.ignore
               )
             )
           }
@@ -259,7 +259,7 @@ struct RegSetupView: View {
   }
 
   @ViewBuilder
-  func launch(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
+  func launch(_ viewStore: ViewStoreOf<RegSetupFeature>) -> some View {
     Section("Launch") {
       Button {
         viewStore.send(.setMode(.close))
@@ -281,7 +281,7 @@ struct ContentView_Previews: PreviewProvider {
     RegSetupView(
       store: Store(
         initialState: .init(),
-        reducer: RegFeature()
+        reducer: RegSetupFeature()
       ))
   }
 }

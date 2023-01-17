@@ -13,7 +13,7 @@ struct RegisterApp: App {
       RegSetupView(
         store: Store(
           initialState: .init(),
-          reducer: RegFeature()
+          reducer: RegSetupFeature()
         ))
     }
   }

@@ -6,7 +6,7 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct RegConfigFeature: ReducerProtocol {
+struct RegSetupConfigFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
@@ -53,7 +53,7 @@ struct RegConfigFeature: ReducerProtocol {
 }
 
 struct RegSetupConfigView: View {
-  let store: StoreOf<RegConfigFeature>
+  let store: StoreOf<RegSetupConfigFeature>
 
   var body: some View {
     WithViewStore(store) { viewStore in
@@ -104,7 +104,7 @@ struct RegSetupConfigView_Previews: PreviewProvider {
       RegSetupConfigView(
         store: Store(
           initialState: .init(),
-          reducer: RegConfigFeature()
+          reducer: RegSetupConfigFeature()
         ))
     }
     .previewLayout(.fixed(width: 400, height: 400))
@@ -114,7 +114,7 @@ struct RegSetupConfigView_Previews: PreviewProvider {
       RegSetupConfigView(
         store: Store(
           initialState: .init(isLoading: true),
-          reducer: RegConfigFeature()
+          reducer: RegSetupConfigFeature()
         ))
     }
     .previewLayout(.fixed(width: 400, height: 400))
@@ -130,7 +130,7 @@ struct RegSetupConfigView_Previews: PreviewProvider {
               token: "Token"
             )
           ),
-          reducer: RegConfigFeature()
+          reducer: RegSetupConfigFeature()
         ))
     }
     .previewLayout(.fixed(width: 400, height: 400))
