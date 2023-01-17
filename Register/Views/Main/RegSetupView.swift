@@ -10,36 +10,24 @@ struct RegFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
-    var isLoadingConfig: Bool = true
-    var isRegistering: Bool = false
     var alertState: AlertState<Action>? = nil
+
+    var isLoadingConfig: Bool = true
+    var config: Config = Config.empty
 
     var isConnected: Bool = false
     var lastUpdate: Date? = nil
-
-    var registerRequest = RegisterRequest()
-
-    var hasChangedConfig: Bool = false
-    var config: Config = Config.empty
 
     var isAcceptingPayments: Bool = false
     var isClosed: Bool = false
 
     var cart: TerminalCart = .empty
 
+    var configState: RegConfigFeature.State = .init()
+
     var paymentState: PayFeature.State = .init(
       webViewURL: URL(string: "https://furthemore.org/code-of-conduct/")!
     )
-
-    var registrationDisabled: Bool {
-      return isLoadingConfig || config.terminalName.isEmpty || config.host.isEmpty
-        || config.token.isEmpty || !hasChangedConfig || isRegistering
-        || !Self.isValidHost(host: config.host)
-    }
-
-    var isLoading: Bool {
-      return isLoadingConfig || isRegistering
-    }
 
     static func isValidHost(host: String) -> Bool {
       guard let url = URL(string: host) else {
@@ -53,35 +41,42 @@ struct RegFeature: ReducerProtocol {
   struct AlertContent: Equatable {
     var title: String
     var message: String
+
+    var alertState: AlertState<Action> {
+      return AlertState {
+        TextState(title)
+      } actions: {
+        ButtonState(action: .alertDismissed) {
+          TextState("OK")
+        }
+      } message: {
+        TextState(message)
+      }
+    }
   }
 
-  enum Action: BindableAction, Equatable {
-    case binding(BindingAction<State>)
+  enum Action: Equatable {
     case appeared
     case configLoaded(Config)
     case showConfig, acceptPayments, closeTerminal
-    case disabled
-    case updateName(String)
-    case updateHost(String)
-    case updateToken(String)
-    case registerTerminal
     case setErrorMessage(AlertContent?)
     case alertDismissed
-    case registrationComplete
     case updateStatus(Bool, Date)
     case terminalEvent(TerminalEvent)
+    case configAction(RegConfigFeature.Action)
     case paymentAction(PayFeature.Action)
+    case connect
   }
 
   private enum SubID {}
 
   var body: some ReducerProtocol<State, Action> {
-    BindingReducer()
+    Scope(state: \.configState, action: /Action.configAction) {
+      RegConfigFeature()
+    }
 
     Reduce { state, action in
       switch action {
-      case .binding:
-        return .none
       case .appeared:
         return .task {
           let config = try? await ConfigLoader.loadConfig()
@@ -89,8 +84,15 @@ struct RegFeature: ReducerProtocol {
         }
       case let .configLoaded(config):
         state.config = config
+        state.configState.registerRequest = .init(config: config)
         state.isLoadingConfig = false
-        return .none
+        if config != Config.empty {
+          return .task {
+            return .connect
+          }
+        } else {
+          return .none
+        }
       case .showConfig:
         state.isClosed = false
         state.isAcceptingPayments = false
@@ -103,37 +105,7 @@ struct RegFeature: ReducerProtocol {
         state.isClosed = true
         state.isAcceptingPayments = false
         return .none
-      case .updateName(let name):
-        state.config.terminalName = name
-        state.hasChangedConfig = true
-        return .none
-      case .updateHost(let host):
-        state.config.host = host
-        state.hasChangedConfig = true
-        return .none
-      case .updateToken(let token):
-        state.config.token = token
-        state.hasChangedConfig = true
-        return .none
-      case .registerTerminal:
-        state.isRegistering = true
-        let req = state.registerRequest
-        return .task {
-          let req = req
-          do {
-            let config = try await apis.registerTerminal(req)
-            try await ConfigLoader.saveConfig(config)
-            return .registrationComplete
-          } catch {
-            return .setErrorMessage(
-              AlertContent(
-                title: "Error",
-                message: error.localizedDescription
-              ))
-          }
-        }
-      case .registrationComplete:
-        state.isRegistering = false
+      case .connect:
         let config = state.config
         return .run { send in
           do {
@@ -185,21 +157,12 @@ struct RegFeature: ReducerProtocol {
                   message: error.localizedDescription
                 )))
           }
-        }.cancellable(id: SubID.self, cancelInFlight: true)
-      case let .setErrorMessage(.some(content)):
-        state.isRegistering = false
-        state.alertState = AlertState {
-          TextState(content.title)
-        } actions: {
-          ButtonState(action: .alertDismissed) {
-            TextState("OK")
-          }
-        } message: {
-          TextState(content.message)
         }
+        .cancellable(id: SubID.self, cancelInFlight: true)
+      case let .setErrorMessage(.some(content)):
+        state.alertState = content.alertState
         return .none
       case .setErrorMessage(_):
-        state.isRegistering = false
         state.alertState = nil
         return .none
       case .alertDismissed:
@@ -227,7 +190,27 @@ struct RegFeature: ReducerProtocol {
         return .none
       case .paymentAction:
         return .none
-      case .disabled:
+      case .configAction(.registerTerminal):
+        return .none
+      case let .configAction(.registered(.success(config))):
+        state.config = config
+        state.alertState =
+          AlertContent(
+            title: "Registration Complete",
+            message: "Successfully registered \(config.terminalName)"
+          ).alertState
+        return .task {
+          return .connect
+        }
+      case let .configAction(.registered(.failure(error))):
+        dump(error)
+        state.alertState =
+          AlertContent(
+            title: "Registration Error",
+            message: error.localizedDescription
+          ).alertState
+        return .none
+      case .configAction(_):
         return .none
       }
     }
@@ -246,7 +229,12 @@ struct RegSetupView: View {
             lastUpdated: viewStore.lastUpdate
           )
 
-          config(viewStore)
+          RegSetupConfigView(
+            store: store.scope(
+              state: \.configState,
+              action: RegFeature.Action.configAction
+            ))
+
           launch(viewStore)
         }
         .navigationTitle("Reg Setup")
@@ -279,47 +267,6 @@ struct RegSetupView: View {
       }
     }
     .statusBar(hidden: true)
-  }
-
-  @ViewBuilder
-  func config(_ viewStore: ViewStoreOf<RegFeature>) -> some View {
-    Section("Config") {
-      TextField(
-        text: viewStore.binding(\.registerRequest.$terminalName),
-        prompt: Text("Terminal Name")
-      ) {
-        Text("Terminal Name")
-      }
-
-      TextField(
-        text: viewStore.binding(\.registerRequest.$host),
-        prompt: Text("APIS Host")
-      ) {
-        Text("APIS Host")
-      }
-      .keyboardType(.URL)
-
-      SecureField(
-        text: viewStore.binding(\.registerRequest.$token),
-        prompt: Text("APIS Token")
-      ) {
-        Text("APIS Token")
-      }
-
-      Button {
-        viewStore.send(.registerTerminal)
-      } label: {
-        HStack(spacing: 8) {
-          Label("Register Terminal", systemImage: "cloud.bolt")
-
-          if viewStore.isLoading {
-            ProgressView()
-          }
-        }
-      }
-      .disabled(viewStore.registrationDisabled)
-    }
-    .disabled(viewStore.isLoadingConfig)
   }
 
   @ViewBuilder

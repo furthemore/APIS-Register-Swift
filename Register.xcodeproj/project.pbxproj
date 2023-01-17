@@ -26,6 +26,7 @@
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
+		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 		E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigLoader.swift; sourceTree = "<group>"; };
 		E1327EF329765F74001DF7D6 /* Register.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Register.swift; sourceTree = "<group>"; };
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
+		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
+				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
 			);
 			path = RegSetupView;
 			sourceTree = "<group>";
@@ -351,6 +354,7 @@
 				E1327EF429765F74001DF7D6 /* Register.swift in Sources */,
 				E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */,
 				E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */,
+				E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */,
 				E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */,
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APIS.swift in Sources */,

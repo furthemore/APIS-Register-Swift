@@ -23,7 +23,7 @@ struct RegSetupStatusView: View {
         if let lastUpdated = lastUpdated {
           Text(lastUpdated, format: .dateTime)
         } else {
-          Text("never").bold()
+          Text("never")
         }
       }
     }

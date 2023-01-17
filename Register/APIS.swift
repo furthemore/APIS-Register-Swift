@@ -8,6 +8,7 @@ import Dependencies
 import Foundation
 import IdentifiedCollections
 import MQTTNIO
+import SwiftUI
 import os
 
 enum TerminalEvent: Equatable, Codable {
@@ -76,6 +77,31 @@ struct RegisterRequest: Equatable, Codable {
   @BindableState var terminalName = ""
   @BindableState var host = ""
   @BindableState var token = ""
+
+  init(terminalName: String = "", host: String = "", token: String = "") {
+    self.terminalName = terminalName
+    self.host = host
+    self.token = token
+  }
+
+  init(config: Config) {
+    self.terminalName = config.terminalName
+    self.host = config.host
+    self.token = config.token
+  }
+
+  var hostIsValidURL: Bool {
+    guard let url = URL(string: host) else {
+      return false
+    }
+
+    let scheme = url.scheme
+    return scheme == "http" || scheme == "https"
+  }
+
+  var isReady: Bool {
+    return !terminalName.isEmpty && !host.isEmpty && !token.isEmpty && hostIsValidURL
+  }
 }
 
 struct ApisClient {

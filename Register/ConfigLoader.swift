@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import os
 
 struct Config: Equatable, Codable {
   var terminalName: String
@@ -15,6 +16,8 @@ struct Config: Equatable, Codable {
 }
 
 struct ConfigLoader {
+  private static let logger = Logger(subsystem: "net.syfaro.Register", category: "ConfigLoader")
+
   enum ConfigError: Error {
     case missingDocumentDirectory
   }
@@ -26,12 +29,17 @@ struct ConfigLoader {
       throw ConfigError.missingDocumentDirectory
     }
 
-    return url.appending(path: "config.json")
+    let path = url.appending(path: "config.json")
+    Self.logger.debug("Got config path: \(path, privacy: .public)")
+    return path
   }
 
   static func loadConfig() async throws -> Config? {
+    Self.logger.debug("Attempting to read config")
+
     let configPath = try configFilePath()
     if !fileManager.fileExists(atPath: configPath.path(percentEncoded: false)) {
+      Self.logger.info("Existing config did not exist")
       return nil
     }
 
@@ -39,16 +47,21 @@ struct ConfigLoader {
 
     let decoder = JSONDecoder()
     let config = try decoder.decode(Config.self, from: configData)
+    Self.logger.info("Read existing configuration")
 
     return config
   }
 
   static func saveConfig(_ config: Config) async throws {
+    Self.logger.debug("Attempting to save config")
+
     let configPath = try configFilePath()
 
     let encoder = JSONEncoder()
     let configData = try encoder.encode(config)
 
     try configData.write(to: configPath, options: .completeFileProtection)
+
+    Self.logger.info("Successfully saved config")
   }
 }
