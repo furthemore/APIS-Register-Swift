@@ -152,6 +152,8 @@ struct RegSetupFeature: ReducerProtocol {
             message: error.localizedDescription
           ))
         return .none
+      case .configAction(.clear):
+        return disconnect(state: &state)
       case .configAction:
         return .none
       case let .setErrorMessage(content):

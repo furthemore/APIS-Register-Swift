@@ -27,6 +27,7 @@ struct RegSetupConfigFeature: ReducerProtocol {
     case scannerResult(TaskResult<String>)
     case registerTerminal
     case registered(TaskResult<Config>)
+    case clear
   }
 
   var body: some ReducerProtocol<State, Action> {
@@ -58,6 +59,11 @@ struct RegSetupConfigFeature: ReducerProtocol {
       case .registered:
         state.isLoading = false
         return .none
+      case .clear:
+        state = .init()
+        return .fireAndForget {
+          try? await ConfigLoader.clearConfig()
+        }
       }
     }
   }
@@ -112,6 +118,12 @@ struct RegSetupConfigView: View {
             }
           }
         }.disabled(viewStore.isRegistrationDisabled)
+
+        Button(role: .destructive) {
+          viewStore.send(.clear)
+        } label: {
+          Text("Clear and Disconnect")
+        }
       }
       .disabled(viewStore.isLoading)
       .sheet(

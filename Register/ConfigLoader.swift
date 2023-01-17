@@ -44,7 +44,6 @@ struct ConfigLoader {
 
   static func loadConfig() async throws -> Config? {
     Self.logger.debug("Attempting to read config")
-
     let configPath = try configFilePath()
     if !fileManager.fileExists(atPath: configPath.path(percentEncoded: false)) {
       Self.logger.info("Existing config did not exist")
@@ -62,7 +61,6 @@ struct ConfigLoader {
 
   static func saveConfig(_ config: Config) async throws {
     Self.logger.debug("Attempting to save config")
-
     let configPath = try configFilePath()
 
     let encoder = JSONEncoder()
@@ -71,5 +69,12 @@ struct ConfigLoader {
     try configData.write(to: configPath, options: .completeFileProtection)
 
     Self.logger.info("Successfully saved config")
+  }
+
+  static func clearConfig() async throws {
+    Self.logger.debug("Attempting to clear config")
+    let configPath = try configFilePath()
+    try fileManager.removeItem(at: configPath)
+    Self.logger.info("Successfully cleared config")
   }
 }
