@@ -20,6 +20,7 @@ struct CurrentTimeView: View {
   var body: some View {
     Text(currentTime)
       .font(font)
+      .textSelection(.disabled)
       .onReceive(timer) { _ in
         self.currentTime = Self.dateFormatter.string(from: Date())
       }
