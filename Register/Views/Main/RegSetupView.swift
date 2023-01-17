@@ -58,7 +58,7 @@ struct RegSetupFeature: ReducerProtocol {
 
   enum Action: Equatable {
     case appeared
-    case configLoaded(Config)
+    case configLoaded(TaskResult<Config>)
     case terminalEvent(TerminalEvent)
     case updateStatus(Bool, Date)
     case setMode(Mode)
@@ -79,10 +79,14 @@ struct RegSetupFeature: ReducerProtocol {
       switch action {
       case .appeared:
         return .task {
-          let config = try? await ConfigLoader.loadConfig()
-          return .configLoaded(config ?? Config.empty)
+          do {
+            let config = try await ConfigLoader.loadConfig()
+            return .configLoaded(.success(config ?? Config.empty))
+          } catch {
+            return .configLoaded(.failure(error))
+          }
         }
-      case let .configLoaded(config):
+      case let .configLoaded(.success(config)):
         state.setConfig(config)
         state.isLoadingConfig = false
         if config != Config.empty {
@@ -90,6 +94,13 @@ struct RegSetupFeature: ReducerProtocol {
         } else {
           return .none
         }
+      case let .configLoaded(.failure(error)):
+        state.alertState =
+          AlertContent(
+            title: "Config Load Error",
+            message: error.localizedDescription
+          ).alertState
+        return .none
       case .terminalEvent(.open):
         state.setMode(.acceptPayments)
         return .none
