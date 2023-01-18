@@ -14,7 +14,7 @@ import os
 enum TerminalEvent: Equatable, Codable {
   case open, close
   case clearCart
-  case processPayment
+  case processPayment(note: String?, total: Int)
   case updateCart(cart: TerminalCart)
 }
 
@@ -127,6 +127,7 @@ struct ApisClient {
   var registerTerminal: (RegisterRequest) async throws -> Config
   var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
   var getSquareToken: (Config) async throws -> String
+  var squareTransactionCompleted: (Config, String) async throws -> Bool
 
   private static func url(_ host: String) throws -> URL {
     guard let url = URL(string: host) else {
@@ -203,8 +204,6 @@ extension ApisClient: DependencyKey {
       Self.logger.debug("Attempting to get Square token at \(endpoint, privacy: .public)")
 
       var request = URLRequest(url: endpoint)
-      request.setValue(config.terminalName, forHTTPHeaderField: "x-register-terminal-name")
-      request.setValue(config.token, forHTTPHeaderField: "x-register-token")
       request.setValue(config.key, forHTTPHeaderField: "x-register-key")
       request.httpMethod = "POST"
 
@@ -223,6 +222,36 @@ extension ApisClient: DependencyKey {
 
       let config = try jsonDecoder.decode(String.self, from: data)
       return config
+    },
+    squareTransactionCompleted: { config, transactionID in
+      let url = try Self.url(config.host)
+      let endpoint = url.appending(path: "/terminal/square/completed")
+      Self.logger.debug("Attempting validate Square purchase at \(endpoint, privacy: .public)")
+
+      let jsonEncoder = JSONEncoder()
+      let httpBody = try jsonEncoder.encode(transactionID)
+
+      var request = URLRequest(url: endpoint)
+      request.setValue("application/json", forHTTPHeaderField: "content-type")
+      request.setValue(config.key, forHTTPHeaderField: "x-register-key")
+      request.httpMethod = "POST"
+      request.httpBody = httpBody
+
+      let (data, response) = try await URLSession.shared.data(for: request)
+      guard let httpResponse = response as? HTTPURLResponse else {
+        Self.logger.error("response was not HTTPURLResponse")
+        throw ApisError.badResponse(-1)
+      }
+
+      guard httpResponse.statusCode == 200 else {
+        Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
+        throw ApisError.badResponse(httpResponse.statusCode)
+      }
+
+      let jsonDecoder = JSONDecoder()
+
+      let successful = try jsonDecoder.decode(Bool.self, from: data)
+      return successful
     }
   )
 }

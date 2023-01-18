@@ -12,6 +12,7 @@ struct Config: Equatable, Codable {
   var token: String
   var key: String
   var webViewURL: URL?
+  var allowCash: Bool?
 
   var mqttHost: String
   var mqttPort: Int
@@ -21,7 +22,8 @@ struct Config: Equatable, Codable {
   }
 
   static let empty = Self(
-    terminalName: "", host: "", token: "", key: "", webViewURL: nil, mqttHost: "", mqttPort: -1)
+    terminalName: "", host: "", token: "", key: "", webViewURL: nil, allowCash: nil, mqttHost: "",
+    mqttPort: -1)
 }
 
 struct ConfigLoader {

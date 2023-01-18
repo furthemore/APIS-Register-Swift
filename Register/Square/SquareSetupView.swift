@@ -76,18 +76,7 @@ struct SquareSetupFeature: ReducerProtocol {
       return .none
     case let .setPairingDevice(pairing):
       if pairing == true {
-        let presentedViewController = UIApplication.shared.connectedScenes.filter {
-          $0.activationState == .foregroundActive
-        }
-        .compactMap { $0 as? UIWindowScene }
-        .first?
-        .windows
-        .filter { $0.isKeyWindow }
-        .first?
-        .rootViewController?
-        .presentedViewController
-
-        if let presentedViewController = presentedViewController {
+        if let presentedViewController = Register.presentingViewController {
           let settings = SQRDReaderSettingsController(delegate: SquareSettingsDelegate())
           settings.present(from: presentedViewController)
         } else {

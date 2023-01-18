@@ -7,36 +7,62 @@ import ComposableArchitecture
 import SwiftUI
 import WebKit
 
+struct PaymentFeature: ReducerProtocol {
+  struct State: Equatable {
+    var webViewURL: URL
+    var cart: TerminalCart?
+
+    var alert: AlertState<Action>? = nil
+  }
+
+  enum Action: Equatable {
+    case dismissAlert
+  }
+
+  func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
+    switch action {
+    case .dismissAlert:
+      state.alert = nil
+      return .none
+    }
+  }
+}
+
 struct PaymentView: View {
   @Environment(\.dismiss) var dismiss
   @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
-  @Binding var webViewURL: URL
-  @Binding var cart: TerminalCart?
+  let store: StoreOf<PaymentFeature>
 
   var body: some View {
-    content
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .background(Register.themeColor)
-      .statusBarHidden()
+    WithViewStore(store) { viewStore in
+      content(viewStore)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Register.themeColor)
+        .statusBarHidden()
+        .alert(
+          store.scope(state: \.alert),
+          dismiss: PaymentFeature.Action.dismissAlert
+        )
+    }
   }
 
   @ViewBuilder
-  var content: some View {
+  func content(_ viewStore: ViewStoreOf<PaymentFeature>) -> some View {
     if horizontalSizeClass == .compact {
-      payment
+      payment(viewStore)
     } else {
       TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        WebView(url: webViewURL)
+        WebView(url: viewStore.webViewURL)
           .ignoresSafeArea()
 
-        payment
+        payment(viewStore)
       }
     }
   }
 
   @ViewBuilder
-  var payment: some View {
+  func payment(_ viewStore: ViewStoreOf<PaymentFeature>) -> some View {
     VStack(spacing: 0) {
       CurrentTimeView()
         .foregroundColor(.white)
@@ -46,7 +72,7 @@ struct PaymentView: View {
         .padding([.top], 16)
         .frame(maxWidth: .infinity)
 
-      if let cart = cart {
+      if let cart = viewStore.cart {
         List {
           paymentLineItems(cart)
         }
@@ -107,18 +133,9 @@ struct WebView: UIViewRepresentable {
 struct PaymentView_Previews: PreviewProvider {
   static var previews: some View {
     PaymentView(
-      webViewURL: .constant(Register.fallbackURL),
-      cart: .constant(
-        .init(
-          badges: .init(),
-          charityDonation: 0,
-          organizationDonation: 0,
-          total: 0
-        )
+      store: Store(
+        initialState: .init(webViewURL: Register.fallbackURL),
+        reducer: PaymentFeature()
       ))
-
-    PaymentView(
-      webViewURL: .constant(Register.fallbackURL),
-      cart: .constant(nil))
   }
 }
