@@ -126,6 +126,7 @@ struct ApisClient {
 
   var registerTerminal: (RegisterRequest) async throws -> Config
   var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
+  var getSquareToken: (Config) async throws -> String
 
   private static func url(_ host: String) throws -> URL {
     guard let url = URL(string: host) else {
@@ -195,6 +196,33 @@ extension ApisClient: DependencyKey {
         try! client.syncShutdownGracefully()
         throw error
       }
+    },
+    getSquareToken: { config in
+      let url = try Self.url(config.host)
+      let endpoint = url.appending(path: "/terminal/square/token")
+      Self.logger.debug("Attempting to get Square token at \(endpoint, privacy: .public)")
+
+      var request = URLRequest(url: endpoint)
+      request.setValue(config.terminalName, forHTTPHeaderField: "x-register-terminal-name")
+      request.setValue(config.token, forHTTPHeaderField: "x-register-token")
+      request.setValue(config.key, forHTTPHeaderField: "x-register-key")
+      request.httpMethod = "POST"
+
+      let (data, response) = try await URLSession.shared.data(for: request)
+      guard let httpResponse = response as? HTTPURLResponse else {
+        Self.logger.error("response was not HTTPURLResponse")
+        throw ApisError.badResponse(-1)
+      }
+
+      guard httpResponse.statusCode == 200 else {
+        Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
+        throw ApisError.badResponse(httpResponse.statusCode)
+      }
+
+      let jsonDecoder = JSONDecoder()
+
+      let config = try jsonDecoder.decode(String.self, from: data)
+      return config
     }
   )
 }

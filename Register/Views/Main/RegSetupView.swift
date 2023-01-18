@@ -18,8 +18,11 @@ struct RegSetupFeature: ReducerProtocol {
 
     private(set) var isAcceptingPayments: Bool = false
     private(set) var isClosed: Bool = false
+    var isConfiguringSquare = false
 
     var configState: RegSetupConfigFeature.State = .init()
+    var squareSetupState: SquareSetupFeature.State = .init()
+
     var cart: TerminalCart? = nil
 
     private(set) var alertState: AlertState<Action>? = nil
@@ -32,6 +35,7 @@ struct RegSetupFeature: ReducerProtocol {
     mutating func setConfig(_ config: Config) {
       self.config = config
       configState.registerRequest = .init(config: config)
+      squareSetupState.config = config
     }
 
     mutating func setAlert(_ content: AlertContent?) {
@@ -66,7 +70,9 @@ struct RegSetupFeature: ReducerProtocol {
     case terminalEvent(TerminalEvent)
     case updateStatus(Bool, Date)
     case setMode(Mode)
+    case setConfiguringSquare(Bool)
     case configAction(RegSetupConfigFeature.Action)
+    case squarePermissionsAction(SquareSetupFeature.Action)
     case setErrorMessage(AlertContent?)
     case alertDismissed
     case ignore
@@ -77,6 +83,10 @@ struct RegSetupFeature: ReducerProtocol {
   var body: some ReducerProtocol<State, Action> {
     Scope(state: \.configState, action: /Action.configAction) {
       RegSetupConfigFeature()
+    }
+
+    Scope(state: \.squareSetupState, action: /Action.squarePermissionsAction) {
+      SquareSetupFeature()
     }
 
     Reduce { state, action in
@@ -126,6 +136,9 @@ struct RegSetupFeature: ReducerProtocol {
       case let .setMode(mode):
         state.setMode(mode)
         return .none
+      case let .setConfiguringSquare(configuring):
+        state.isConfiguringSquare = configuring
+        return .none
       case .configAction(.registerTerminal):
         return disconnect(state: &state)
       case let .configAction(.registered(.success(config))):
@@ -155,6 +168,8 @@ struct RegSetupFeature: ReducerProtocol {
       case .configAction(.clear):
         return disconnect(state: &state)
       case .configAction:
+        return .none
+      case .squarePermissionsAction:
         return .none
       case let .setErrorMessage(content):
         state.setAlert(content)
@@ -283,6 +298,12 @@ struct RegSetupView: View {
               action: RegSetupFeature.Action.configAction
             ))
 
+          Section("Square") {
+            Button("Square Setup") {
+              viewStore.send(.setConfiguringSquare(true))
+            }.disabled(!viewStore.isConnected)
+          }
+
           launch(viewStore)
         }
         .navigationTitle("Reg Setup")
@@ -312,6 +333,16 @@ struct RegSetupView: View {
             )
           }
         )
+        .sheet(
+          isPresented: viewStore.binding(
+            get: \.isConfiguringSquare, send: RegSetupFeature.Action.setConfiguringSquare)
+        ) {
+          SquareSetupView(
+            store: store.scope(
+              state: \.squareSetupState,
+              action: RegSetupFeature.Action.squarePermissionsAction
+            ))
+        }
         .onAppear {
           if viewStore.isLoadingConfig {
             viewStore.send(.appeared)

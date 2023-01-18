@@ -25,6 +25,9 @@
 		E1327EEB29760AA9001DF7D6 /* ConfigLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
+		E16EF7C229774BBA00E03212 /* SquareReaderSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */; };
+		E16EF7C329774BBA00E03212 /* SquareReaderSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
 		E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = E1DE8EB12977138B003795C2 /* CodeScanner */; };
@@ -47,6 +50,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E16EF7C429774BBA00E03212 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				E16EF7C329774BBA00E03212 /* SquareReaderSDK.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E1327EAC29750A7A001DF7D6 /* Register.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Register.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterApp.swift; sourceTree = "<group>"; };
@@ -67,6 +84,8 @@
 		E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnLayout.swift; sourceTree = "<group>"; };
 		E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigLoader.swift; sourceTree = "<group>"; };
 		E1327EF329765F74001DF7D6 /* Register.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Register.swift; sourceTree = "<group>"; };
+		E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SquareReaderSDK.xcframework; path = Register.xcodeproj/SquareReaderSDK.xcframework; sourceTree = "<group>"; };
+		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
 		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -76,6 +95,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E16EF7C229774BBA00E03212 /* SquareReaderSDK.xcframework in Frameworks */,
 				E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */,
 				E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */,
 				E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */,
@@ -106,6 +126,7 @@
 				E1327EBF29750A7B001DF7D6 /* RegisterTests */,
 				E1327EC929750A7B001DF7D6 /* RegisterUITests */,
 				E1327EAD29750A7A001DF7D6 /* Products */,
+				E16EF7C029774BBA00E03212 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -129,6 +150,7 @@
 				E1327EDC29750B7F001DF7D6 /* APIS.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */,
 				E1327EEF29765CDF001DF7D6 /* Views */,
+				E16EF7C629774C4200E03212 /* Square */,
 			);
 			path = Register;
 			sourceTree = "<group>";
@@ -196,6 +218,22 @@
 			path = Layouts;
 			sourceTree = "<group>";
 		};
+		E16EF7C029774BBA00E03212 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E16EF7C629774C4200E03212 /* Square */ = {
+			isa = PBXGroup;
+			children = (
+				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
+			);
+			path = Square;
+			sourceTree = "<group>";
+		};
 		E1DE8EAA29766463003795C2 /* PaymentView */ = {
 			isa = PBXGroup;
 			children = (
@@ -224,6 +262,8 @@
 				E1327EA829750A7A001DF7D6 /* Sources */,
 				E1327EA929750A7A001DF7D6 /* Frameworks */,
 				E1327EAA29750A7A001DF7D6 /* Resources */,
+				E16EF7C429774BBA00E03212 /* Embed Frameworks */,
+				E16EF7C529774BC400E03212 /* Square Reader SDK Setup */,
 			);
 			buildRules = (
 			);
@@ -349,6 +389,27 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		E16EF7C529774BC400E03212 /* Square Reader SDK Setup */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Square Reader SDK Setup";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "FRAMEWORKS=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n\"${FRAMEWORKS}/SquareReaderSDK.framework/setup\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		E1327EA829750A7A001DF7D6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -364,6 +425,7 @@
 				E1327EDD29750B7F001DF7D6 /* APIS.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1327EB029750A7A001DF7D6 /* RegisterApp.swift in Sources */,
+				E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */,
 				E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */,
 				E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */,
 				E1327EE92975C1D6001DF7D6 /* TwoColumnLayout.swift in Sources */,
@@ -528,7 +590,11 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This application integrates with Square for card processing. To protect buyers and sellers, Square requires your location to process payments.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This application integrates with Square for card processing. To swipe magnetic cards using the headphone jack, Square requires access to the microphone.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -558,7 +624,11 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This application integrates with Square for card processing. To protect buyers and sellers, Square requires your location to process payments.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This application integrates with Square for card processing. To swipe magnetic cards using the headphone jack, Square requires access to the microphone.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
