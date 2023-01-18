@@ -88,6 +88,7 @@ struct RegSetupFeature: ReducerProtocol {
   }
 
   private enum SubID {}
+  private enum SquareID {}
 
   var body: some ReducerProtocol<State, Action> {
     Scope(state: \.configState, action: /Action.configAction) {
@@ -126,19 +127,25 @@ struct RegSetupFeature: ReducerProtocol {
           ))
         return .none
       case .terminalEvent(.open):
+        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
         state.setMode(.acceptPayments)
         return .none
       case .terminalEvent(.close):
+        state.paymentState.currentTransactionReference = ""
         state.setMode(.close)
         return .none
       case .terminalEvent(.clearCart):
-        state.paymentState.cart = nil
-        state.paymentState.alert = nil
+        state.paymentState.currentTransactionReference = ""
+        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
         return .none
       case let .terminalEvent(.updateCart(cart)):
+        state.paymentState.currentTransactionReference = ""
         state.paymentState.cart = cart
+        state.paymentState.alert = nil
         return .none
-      case let .terminalEvent(.processPayment(note, total)):
+      case let .terminalEvent(.processPayment(total, note, reference)):
+        state.paymentState.currentTransactionReference = reference
+
         let amountMoney = SQRDMoney(amount: total)
         let params = SQRDCheckoutParameters(amountMoney: amountMoney)
         params.note = note
@@ -159,7 +166,9 @@ struct RegSetupFeature: ReducerProtocol {
           return AnyCancellable {
             _ = delegate
           }
-        }.map(RegSetupFeature.Action.squareCheckoutAction)
+        }
+        .map(RegSetupFeature.Action.squareCheckoutAction)
+        .cancellable(id: SquareID.self, cancelInFlight: true)
       case let .updateStatus(connected, lastUpdate):
         state.isConnected = connected
         state.lastUpdate = lastUpdate
@@ -215,12 +224,15 @@ struct RegSetupFeature: ReducerProtocol {
         return .none
       case let .squareCheckoutAction(.finished(.success(result))):
         let config = state.config
+        let currentTransactionReference = state.paymentState.currentTransactionReference
         return .task {
           let isValidTransaction: Bool
           do {
             isValidTransaction = try await apis.squareTransactionCompleted(
               config,
-              result.transactionID ?? ""
+              currentTransactionReference,
+              result.transactionID ?? "",
+              result.transactionClientID
             )
           } catch {
             Register.logger.error("Checkout failed: \(error, privacy: .public)")
@@ -293,6 +305,7 @@ struct RegSetupFeature: ReducerProtocol {
                 let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
                 await send(.terminalEvent(event), animation: .easeInOut)
               } catch {
+                Register.logger.warning("Unknown event: \(error, privacy: .public)")
                 await send(
                   .setErrorMessage(
                     AlertContent(

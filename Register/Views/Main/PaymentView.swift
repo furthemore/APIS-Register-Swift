@@ -11,6 +11,7 @@ struct PaymentFeature: ReducerProtocol {
   struct State: Equatable {
     var webViewURL: URL
     var cart: TerminalCart?
+    var currentTransactionReference = ""
 
     var alert: AlertState<Action>? = nil
   }

@@ -14,7 +14,7 @@ import os
 enum TerminalEvent: Equatable, Codable {
   case open, close
   case clearCart
-  case processPayment(note: String?, total: Int)
+  case processPayment(total: Int, note: String, reference: String)
   case updateCart(cart: TerminalCart)
 }
 
@@ -127,7 +127,7 @@ struct ApisClient {
   var registerTerminal: (RegisterRequest) async throws -> Config
   var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
   var getSquareToken: (Config) async throws -> String
-  var squareTransactionCompleted: (Config, String) async throws -> Bool
+  var squareTransactionCompleted: (Config, String, String, String) async throws -> Bool
 
   private static func url(_ host: String) throws -> URL {
     guard let url = URL(string: host) else {
@@ -196,6 +196,10 @@ extension ApisClient: DependencyKey {
         Self.logger.warning("Got MQTT error: \(error, privacy: .public)")
         try! client.syncShutdownGracefully()
         throw error
+      } catch {
+        Self.logger.error("Got other error: \(error, privacy: .public)")
+        try! client.syncShutdownGracefully()
+        throw error
       }
     },
     getSquareToken: { config in
@@ -223,13 +227,27 @@ extension ApisClient: DependencyKey {
       let config = try jsonDecoder.decode(String.self, from: data)
       return config
     },
-    squareTransactionCompleted: { config, transactionID in
+    squareTransactionCompleted: { config, reference, transactionID, clientTransactionID in
       let url = try Self.url(config.host)
       let endpoint = url.appending(path: "/terminal/square/completed")
       Self.logger.debug("Attempting validate Square purchase at \(endpoint, privacy: .public)")
 
+      struct TransactionData: Encodable {
+        let key: String
+        let reference: String
+        let clientTransactionId: String
+        let serverTransactionId: String
+      }
+
+      let transactionData = TransactionData(
+        key: config.key,
+        reference: reference,
+        clientTransactionId: clientTransactionID,
+        serverTransactionId: transactionID
+      )
+
       let jsonEncoder = JSONEncoder()
-      let httpBody = try jsonEncoder.encode(transactionID)
+      let httpBody = try jsonEncoder.encode(transactionData)
 
       var request = URLRequest(url: endpoint)
       request.setValue("application/json", forHTTPHeaderField: "content-type")
@@ -248,10 +266,14 @@ extension ApisClient: DependencyKey {
         throw ApisError.badResponse(httpResponse.statusCode)
       }
 
+      struct TransactionResponse: Decodable {
+        let success: Bool
+      }
+
       let jsonDecoder = JSONDecoder()
 
-      let successful = try jsonDecoder.decode(Bool.self, from: data)
-      return successful
+      let transactionResponse = try jsonDecoder.decode(TransactionResponse.self, from: data)
+      return transactionResponse.success
     }
   )
 }
