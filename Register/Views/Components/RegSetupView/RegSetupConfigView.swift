@@ -104,14 +104,14 @@ struct RegSetupConfigView: View {
         Button {
           viewStore.send(.showScanner(true))
         } label: {
-          Text("Import QR Code")
+          Label("Import QR Code", systemImage: "qrcode.viewfinder")
         }
 
         Button {
           viewStore.send(.registerTerminal)
         } label: {
           HStack(spacing: 8) {
-            Text("Register Terminal")
+            Label("Register Terminal", systemImage: "terminal")
 
             if viewStore.isLoading {
               ProgressView()
@@ -122,7 +122,7 @@ struct RegSetupConfigView: View {
         Button(role: .destructive) {
           viewStore.send(.clear)
         } label: {
-          Text("Clear and Disconnect")
+          Label("Clear and Disconnect", systemImage: "trash")
         }
       }
       .disabled(viewStore.isLoading)

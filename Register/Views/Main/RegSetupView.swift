@@ -212,6 +212,9 @@ struct RegSetupFeature: ReducerProtocol {
       case .squareSetupAction(.fetchedAuthToken):
         state.squareIsReady = true
         return .none
+      case .squareSetupAction(.didRemoveAuthorization):
+        state.squareIsReady = false
+        return .none
       case .squareSetupAction:
         return .none
       case .squareCheckoutAction(.cancelled):
@@ -397,8 +400,10 @@ struct RegSetupView: View {
             ))
 
           Section("Square") {
-            Button("Square Setup") {
+            Button {
               viewStore.send(.setConfiguringSquare(true))
+            } label: {
+              Label("Square Setup", systemImage: "square")
             }.disabled(!viewStore.isConnected)
           }
 
