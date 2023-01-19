@@ -17,6 +17,7 @@ struct PaymentFeature: ReducerProtocol {
   }
 
   enum Action: Equatable {
+    case dismissView
     case dismissAlert
   }
 
@@ -25,12 +26,13 @@ struct PaymentFeature: ReducerProtocol {
     case .dismissAlert:
       state.alert = nil
       return .none
+    case .dismissView:
+      return .none
     }
   }
 }
 
 struct PaymentView: View {
-  @Environment(\.dismiss) var dismiss
   @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
   let store: StoreOf<PaymentFeature>
@@ -69,9 +71,9 @@ struct PaymentView: View {
       CurrentTimeView()
         .foregroundColor(.white)
         .onTapGesture(count: 5) {
-          dismiss()
+          viewStore.send(.dismissView)
         }
-        .padding([.top], 16)
+        .padding()
         .frame(maxWidth: .infinity)
 
       if let cart = viewStore.cart {
@@ -97,9 +99,14 @@ struct PaymentView: View {
     }
 
     Section {
-      PaymentLineBasicView(lineName: "Total", price: cart.total)
+      if let totalDiscount = cart.totalDiscount, totalDiscount > 0 {
+        PaymentLineBasicView(lineName: "Subtotal", price: cart.total)
+        PaymentLineBasicView(lineName: "Discounts", price: -totalDiscount)
+      }
+
+      PaymentLineBasicView(lineName: "Total", price: cart.total - (cart.totalDiscount ?? 0))
+        .bold()
     }
-    .bold()
   }
 
   @ViewBuilder
@@ -112,7 +119,8 @@ struct PaymentView: View {
           name: "\(badge.firstName) \(badge.lastName)",
           badgeName: badge.badgeName,
           levelName: badge.effectiveLevelName,
-          price: badge.effectiveLevelPrice
+          price: badge.effectiveLevelPrice,
+          discountedPrice: badge.discountedPrice
         )
       }
     }

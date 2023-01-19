@@ -263,6 +263,9 @@ struct RegSetupFeature: ReducerProtocol {
           message: TextState("Payment was not successful.")
         )
         return .none
+      case .paymentAction(.dismissView):
+        state.setMode(.setup)
+        return .none
       case .paymentAction:
         return .none
       case let .setErrorMessage(content):

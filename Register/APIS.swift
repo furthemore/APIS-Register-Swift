@@ -25,6 +25,7 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
   let badgeName: String
   let effectiveLevelName: String
   let effectiveLevelPrice: Decimal
+  let discountedPrice: Decimal?
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -35,6 +36,8 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
     self.effectiveLevelName = try container.decode(String.self, forKey: .effectiveLevelName)
     self.effectiveLevelPrice = Decimal(
       string: try container.decode(String.self, forKey: .effectiveLevelPrice))!
+    self.discountedPrice = Decimal(
+      string: try container.decodeIfPresent(String.self, forKey: .discountedPrice) ?? "")
   }
 }
 
@@ -42,22 +45,28 @@ struct TerminalCart: Equatable, Codable {
   let badges: IdentifiedArrayOf<TerminalBadge>
   let charityDonation: Decimal
   let organizationDonation: Decimal
+  let totalDiscount: Decimal?
   let total: Decimal
 
   static let empty = Self(
     badges: .init(),
     charityDonation: 0,
     organizationDonation: 0,
+    totalDiscount: nil,
     total: 0
   )
 
   init(
-    badges: IdentifiedArrayOf<TerminalBadge>, charityDonation: Decimal,
-    organizationDonation: Decimal, total: Decimal
+    badges: IdentifiedArrayOf<TerminalBadge>,
+    charityDonation: Decimal,
+    organizationDonation: Decimal,
+    totalDiscount: Decimal?,
+    total: Decimal
   ) {
     self.badges = badges
     self.charityDonation = charityDonation
     self.organizationDonation = organizationDonation
+    self.totalDiscount = totalDiscount
     self.total = total
   }
 
@@ -69,6 +78,8 @@ struct TerminalCart: Equatable, Codable {
       string: try container.decode(String.self, forKey: .charityDonation))!
     self.organizationDonation = Decimal(
       string: try container.decode(String.self, forKey: .organizationDonation))!
+    self.totalDiscount = Decimal(
+      string: try container.decodeIfPresent(String.self, forKey: .totalDiscount) ?? "")
     self.total = Decimal(string: try container.decode(String.self, forKey: .total))!
   }
 }

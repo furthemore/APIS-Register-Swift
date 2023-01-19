@@ -6,10 +6,11 @@
 import SwiftUI
 
 struct PaymentLineBadgeView: View {
-  var name: String
-  var badgeName: String
-  var levelName: String
-  var price: Decimal
+  let name: String
+  let badgeName: String
+  let levelName: String
+  let price: Decimal
+  let discountedPrice: Decimal?
 
   var body: some View {
     HStack {
@@ -23,7 +24,15 @@ struct PaymentLineBadgeView: View {
 
       Spacer()
 
-      Text(price, format: .currency(code: "USD"))
+      VStack(alignment: .trailing) {
+        Text(price, format: .currency(code: "USD"))
+          .strikethrough(discountedPrice != nil)
+          .foregroundColor(discountedPrice == nil ? .primary : .secondary)
+
+        if let discountedPrice = discountedPrice {
+          Text(discountedPrice, format: .currency(code: "USD"))
+        }
+      }
     }
   }
 }
@@ -34,7 +43,16 @@ struct PaymentBadgeLine_Previews: PreviewProvider {
       name: "First Last",
       badgeName: "Fancy Name",
       levelName: "Sponsor",
-      price: 175
-    )
+      price: 175,
+      discountedPrice: nil
+    ).previewDisplayName("Standard Badge")
+
+    PaymentLineBadgeView(
+      name: "First Last",
+      badgeName: "Fancy Name",
+      levelName: "Sponsor",
+      price: 175,
+      discountedPrice: 150
+    ).previewDisplayName("Discounted Badge")
   }
 }

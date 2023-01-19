@@ -8,29 +8,27 @@ import SwiftUI
 struct ClosedView: View {
   @Environment(\.dismiss) var dismiss
 
-  var dateFormatter: DateFormatter {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "hh:mm a"
-    return dateFormatter
-  }
-
   var body: some View {
     VStack {
-      Text("Closed")
-        .modifier(FitToWidth())
-      Text("Next Register, Please")
-        .modifier(FitToWidth())
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .overlay(alignment: .bottom) {
+      Spacer()
+
+      VStack {
+        Text("Closed")
+          .modifier(FitToWidth())
+        Text("Next Register, Please")
+          .modifier(FitToWidth())
+      }.bold()
+
+      Spacer()
+
       CurrentTimeView()
         .onTapGesture(count: 5) {
           dismiss()
         }
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .padding()
     .foregroundColor(.white)
-    .bold()
     .background(Register.themeColor)
     .statusBar(hidden: true)
   }
