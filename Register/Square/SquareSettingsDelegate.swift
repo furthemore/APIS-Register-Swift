@@ -9,9 +9,9 @@
   import SquareReaderSDK
 
   class SquareSettingsDelegate: SQRDReaderSettingsControllerDelegate {
-    let subscriber: Effect<SquareSettingsAction, Never>.Subscriber
+    let subscriber: EffectTask<SquareSettingsAction>.Subscriber
 
-    init(subscriber: Effect<SquareSettingsAction, Never>.Subscriber) {
+    init(subscriber: EffectTask<SquareSettingsAction>.Subscriber) {
       self.subscriber = subscriber
     }
 

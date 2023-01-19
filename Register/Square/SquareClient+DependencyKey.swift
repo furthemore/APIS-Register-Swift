@@ -66,7 +66,7 @@ import ComposableArchitecture
           throw SquareError.missingViewController
         }
 
-        return Effect<SquareSettingsAction, Never>.run { sub in
+        return EffectTask<SquareSettingsAction>.run { sub in
           let delegate = SquareSettingsDelegate(subscriber: sub)
 
           DispatchQueue.main.async {
@@ -89,7 +89,7 @@ import ComposableArchitecture
         checkoutParams.note = params.note
         checkoutParams.additionalPaymentTypes = params.allowCash ? [.cash] : []
 
-        return Effect<SquareCheckoutAction, Never>.run { sub in
+        return EffectTask<SquareCheckoutAction>.run { sub in
           let delegate = SquareCheckoutDelegate(sub)
 
           DispatchQueue.main.async {

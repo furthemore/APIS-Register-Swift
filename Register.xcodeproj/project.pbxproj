@@ -15,7 +15,7 @@
 		E1327ECB29750A7B001DF7D6 /* RegisterUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327ECA29750A7B001DF7D6 /* RegisterUITests.swift */; };
 		E1327ECD29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327ECC29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift */; };
 		E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EDA29750ACB001DF7D6 /* ComposableArchitecture */; };
-		E1327EDD29750B7F001DF7D6 /* APIS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EDC29750B7F001DF7D6 /* APIS.swift */; };
+		E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EDC29750B7F001DF7D6 /* APISClient.swift */; };
 		E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EDE29750F6C001DF7D6 /* ClosedView.swift */; };
 		E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE029751BB6001DF7D6 /* PaymentView.swift */; };
 		E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */; };
@@ -37,6 +37,7 @@
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
 		E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = E1DE8EB12977138B003795C2 /* CodeScanner */; };
+		E1ED63052979E40C005343A9 /* APISClient+DependencyKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,7 +82,7 @@
 		E1327EC629750A7B001DF7D6 /* RegisterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RegisterUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1327ECA29750A7B001DF7D6 /* RegisterUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUITests.swift; sourceTree = "<group>"; };
 		E1327ECC29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		E1327EDC29750B7F001DF7D6 /* APIS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIS.swift; sourceTree = "<group>"; };
+		E1327EDC29750B7F001DF7D6 /* APISClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APISClient.swift; sourceTree = "<group>"; };
 		E1327EDE29750F6C001DF7D6 /* ClosedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedView.swift; sourceTree = "<group>"; };
 		E1327EE029751BB6001DF7D6 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
 		E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeView.swift; sourceTree = "<group>"; };
@@ -101,6 +102,7 @@
 		E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SquareClient+DependencyKey.swift"; sourceTree = "<group>"; };
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
 		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
+		E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APISClient+DependencyKey.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,7 +162,7 @@
 				E1327EF329765F74001DF7D6 /* Register.swift */,
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */,
-				E1327EDC29750B7F001DF7D6 /* APIS.swift */,
+				E1ED63032979E393005343A9 /* APIS */,
 				E1327EEF29765CDF001DF7D6 /* Views */,
 				E16EF7C629774C4200E03212 /* Square */,
 				E1327EB329750A7B001DF7D6 /* Assets.xcassets */,
@@ -278,6 +280,15 @@
 				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
 			);
 			path = RegSetupView;
+			sourceTree = "<group>";
+		};
+		E1ED63032979E393005343A9 /* APIS */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EDC29750B7F001DF7D6 /* APISClient.swift */,
+				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
+			);
+			path = APIS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -452,7 +463,7 @@
 				E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */,
 				E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */,
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
-				E1327EDD29750B7F001DF7D6 /* APIS.swift in Sources */,
+				E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1C527B229790838009B2B54 /* SquareClient.swift in Sources */,
 				E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */,
@@ -460,6 +471,7 @@
 				E1327EB029750A7A001DF7D6 /* RegisterApp.swift in Sources */,
 				E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */,
 				E1C527B42979A046009B2B54 /* SquareSettingsDelegate.swift in Sources */,
+				E1ED63052979E40C005343A9 /* APISClient+DependencyKey.swift in Sources */,
 				E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */,
 				E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */,
 				E1327EE92975C1D6001DF7D6 /* TwoColumnLayout.swift in Sources */,

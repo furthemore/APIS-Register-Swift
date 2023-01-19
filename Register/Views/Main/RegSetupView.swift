@@ -66,8 +66,7 @@ struct RegSetupFeature: ReducerProtocol {
   enum Action: Equatable {
     case appeared
     case configLoaded(TaskResult<Config>)
-    case terminalEvent(TerminalEvent)
-    case updateStatus(Bool, Date)
+    case terminalEvent(TaskResult<TerminalEvent>)
     case setMode(Mode)
     case setConfiguringSquare(Bool)
     case configAction(RegSetupConfigFeature.Action)
@@ -109,7 +108,7 @@ struct RegSetupFeature: ReducerProtocol {
         state.setConfig(config)
         state.regState.needsConfigLoad = false
         if config != Config.empty {
-          return connect(&state, config: state.config)
+          return connect(&state)
         } else {
           return .none
         }
@@ -119,55 +118,8 @@ struct RegSetupFeature: ReducerProtocol {
           message: error.localizedDescription
         )
         return .none
-      case .terminalEvent(.open):
-        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
-        if state.regState.squareIsReady {
-          state.setMode(.acceptPayments)
-        } else {
-          state.setAlert(
-            title: "Opening Failed",
-            message: "Square is not yet configured."
-          )
-        }
-        return .none
-      case .terminalEvent(.close):
-        state.paymentState.currentTransactionReference = ""
-        state.setMode(.close)
-        return .none
-      case .terminalEvent(.clearCart):
-        state.paymentState.currentTransactionReference = ""
-        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
-        return .none
-      case let .terminalEvent(.updateCart(cart)):
-        state.paymentState.currentTransactionReference = ""
-        state.paymentState.cart = cart
-        state.paymentState.alert = nil
-        return .none
-      case let .terminalEvent(.processPayment(total, note, reference)):
-        state.paymentState.currentTransactionReference = reference
-
-        let params = SquareCheckoutParams(
-          amountMoney: total,
-          note: note,
-          allowCash: state.config.allowCash ?? false
-        )
-
-        do {
-          return try square.checkout(params)
-          .map(RegSetupFeature.Action.squareCheckoutAction)
-          .cancellable(id: SquareID.self, cancelInFlight: true)
-        } catch {
-          state.setAlert(
-            title: "Error",
-            message: "Could not create checkout."
-          )
-          return .none
-        }
-      case let .updateStatus(connected, lastEvent):
-        state.regState.isConnected = connected
-        state.regState.lastEvent = lastEvent
-        state.configState.canUpdateConfig = !connected
-        return .none
+      case let .terminalEvent(event):
+        return handleTerminalEvent(&state, event: event)
       case let .setMode(mode):
         state.setMode(mode)
         return .none
@@ -182,7 +134,7 @@ struct RegSetupFeature: ReducerProtocol {
           title: "Registration Complete",
           message: "Successfully registered \(config.terminalName)"
         )
-        return connect(&state, config: state.config)
+        return connect(&state)
       case let .configAction(.registered(.failure(error))):
         state.setAlert(
           title: "Registration Error",
@@ -262,7 +214,7 @@ struct RegSetupFeature: ReducerProtocol {
         return .none
       case let .scenePhaseChanged(phase):
         if state.regState.isConnected && phase == .active {
-          return connect(&state, config: state.config)
+          return connect(&state)
         } else if state.regState.isConnected && phase == .background {
           return .cancel(id: SubID.self)
         } else {
@@ -273,69 +225,6 @@ struct RegSetupFeature: ReducerProtocol {
     #if DEBUG
       ._printChanges()
     #endif
-  }
-
-  private func connect(_ state: inout State, config: Config) -> EffectTask<Action> {
-    state.regState.isConnected = false
-    state.configState.canUpdateConfig = true
-
-    return .run { send in
-      do {
-        let (client, listener) = try await apis.subscribeToEvents(config)
-        await send(.updateStatus(true, Date()))
-
-        let jsonDecoder = JSONDecoder()
-
-        await withTaskCancellationHandler {
-          Register.logger.debug("Stream was started")
-          for await result in listener {
-            switch result {
-            case .success(let publish):
-              await send(.updateStatus(true, Date()))
-
-              var buffer = publish.payload
-              guard let data = buffer.readData(length: buffer.readableBytes) else {
-                continue
-              }
-
-              do {
-                let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
-                await send(.terminalEvent(event), animation: .easeInOut)
-              } catch {
-                Register.logger.warning("Unknown event: \(error, privacy: .public)")
-                await send(
-                  .setErrorMessage(
-                    title: "Unknown Event",
-                    message: error.localizedDescription
-                  ))
-              }
-            case .failure(let error):
-              await send(
-                .setErrorMessage(
-                  title: "Error",
-                  message: error.localizedDescription
-                ))
-            }
-          }
-        } onCancel: {
-          Register.logger.info("Stream was cancelled")
-          try? client.syncShutdownGracefully()
-        }
-      } catch {
-        await send(
-          .setErrorMessage(
-            title: "Error",
-            message: error.localizedDescription
-          ))
-      }
-    }
-    .cancellable(id: SubID.self, cancelInFlight: true)
-  }
-
-  private func disconnect(state: inout State) -> EffectTask<Action> {
-    state.regState.isConnected = false
-    state.configState.canUpdateConfig = true
-    return .cancel(id: SubID.self)
   }
 
   private func decodeQRCode(state: inout State, payload: String) -> EffectTask<Action> {
@@ -358,6 +247,90 @@ struct RegSetupFeature: ReducerProtocol {
         title: "QR Code Error",
         message: error.localizedDescription
       )
+      return .none
+    }
+  }
+
+  private func connect(_ state: inout State) -> EffectTask<Action> {
+    state.regState.isConnected = false
+    state.configState.canUpdateConfig = true
+
+    do {
+      return
+        try apis
+        .subscribeToEvents(state.config)
+        .map(Action.terminalEvent)
+        .cancellable(id: SubID.self, cancelInFlight: true)
+        .animation(.easeInOut)
+    } catch {
+      state.setAlert(title: "Error", message: error.localizedDescription)
+      return .none
+    }
+  }
+
+  private func disconnect(state: inout State) -> EffectTask<Action> {
+    state.regState.isConnected = false
+    state.configState.canUpdateConfig = true
+
+    return .cancel(id: SubID.self)
+  }
+
+  private func handleTerminalEvent(
+    _ state: inout State,
+    event: TaskResult<TerminalEvent>
+  ) -> EffectTask<Action> {
+    state.regState.isConnected = true
+    state.regState.lastEvent = Date()
+    state.configState.canUpdateConfig = false
+
+    state.paymentState.currentTransactionReference = ""
+
+    switch event {
+    case .success(.connected):
+      return .none
+    case .success(.open):
+      if state.regState.squareIsReady {
+        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
+        state.setMode(.acceptPayments)
+      } else {
+        state.setAlert(
+          title: "Opening Failed",
+          message: "Square is not yet configured."
+        )
+      }
+      return .none
+    case .success(.close):
+      state.setMode(.close)
+      return .none
+    case .success(.clearCart):
+      state.paymentState = .init(webViewURL: state.config.urlOrFallback)
+      return .none
+    case let .success(.updateCart(cart)):
+      state.paymentState.cart = cart
+      state.paymentState.alert = nil
+      return .none
+    case let .success(.processPayment(total, note, reference)):
+      state.paymentState.currentTransactionReference = reference
+
+      let params = SquareCheckoutParams(
+        amountMoney: total,
+        note: note,
+        allowCash: state.config.allowCash ?? false
+      )
+
+      do {
+        return try square.checkout(params)
+          .map(RegSetupFeature.Action.squareCheckoutAction)
+          .cancellable(id: SquareID.self, cancelInFlight: true)
+      } catch {
+        state.setAlert(
+          title: "Error",
+          message: "Could not create checkout."
+        )
+        return .none
+      }
+    case let .failure(error):
+      state.setAlert(title: "Event Error", message: error.localizedDescription)
       return .none
     }
   }

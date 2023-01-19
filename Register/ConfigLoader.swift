@@ -37,6 +37,18 @@ struct Config: Equatable, Codable {
     mqttPassword: "",
     mqttTopic: ""
   )
+
+  static let mock = Self(
+    terminalName: "mockterminal",
+    host: "http://example.com",
+    token: "MOCK-TOKEN",
+    key: "MOCK-KEY",
+    mqttHost: "http://example.com",
+    mqttPort: 443,
+    mqttUserName: "MOCK-USERNAME",
+    mqttPassword: "MOCK-PASSWORD",
+    mqttTopic: "MOCK-TOPIC"
+  )
 }
 
 struct ConfigLoader {

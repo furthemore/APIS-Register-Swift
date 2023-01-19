@@ -9,9 +9,9 @@
   import SquareReaderSDK
 
   class SquareCheckoutDelegate: NSObject, SQRDCheckoutControllerDelegate {
-    let subscriber: Effect<SquareCheckoutAction, Never>.Subscriber
+    let subscriber: EffectTask<SquareCheckoutAction>.Subscriber
 
-    init(_ subscriber: Effect<SquareCheckoutAction, Never>.Subscriber) {
+    init(_ subscriber: EffectTask<SquareCheckoutAction>.Subscriber) {
       self.subscriber = subscriber
     }
 

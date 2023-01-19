@@ -10,14 +10,14 @@ import CoreLocation
 struct LocationManager {
   var authorizationStatus: () -> CLAuthorizationStatus
   var requestWhenInUseAuthorization: () -> Void
-  var delegate: () -> Effect<LocationAction, Never>
+  var delegate: () -> EffectTask<LocationAction>
 }
 
 extension LocationManager: DependencyKey {
   static var liveValue: LocationManager {
     let manager = CLLocationManager()
 
-    let delegate = Effect<LocationAction, Never>.run { sub in
+    let delegate = EffectTask<LocationAction>.run { sub in
       let delegate = LocationManagerDelegate(sub)
       manager.delegate = delegate
 
@@ -50,9 +50,9 @@ enum LocationAction: Equatable {
 }
 
 private class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
-  let subscriber: Effect<LocationAction, Never>.Subscriber
+  let subscriber: EffectTask<LocationAction>.Subscriber
 
-  init(_ subscriber: Effect<LocationAction, Never>.Subscriber) {
+  init(_ subscriber: EffectTask<LocationAction>.Subscriber) {
     self.subscriber = subscriber
   }
 

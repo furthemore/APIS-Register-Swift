@@ -77,8 +77,8 @@ struct SquareClient {
   var authorize: (String) async throws -> SquareLocation
   var deauthorize: () async throws -> Void
 
-  var openSettings: () throws -> Effect<SquareSettingsAction, Never>
-  var checkout: (SquareCheckoutParams) throws -> Effect<SquareCheckoutAction, Never>
+  var openSettings: () throws -> EffectTask<SquareSettingsAction>
+  var checkout: (SquareCheckoutParams) throws -> EffectTask<SquareCheckoutAction>
 }
 
 extension SquareClient: TestDependencyKey {
