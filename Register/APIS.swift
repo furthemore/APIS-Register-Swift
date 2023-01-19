@@ -90,7 +90,7 @@ struct RegisterRequest: Equatable, Codable {
     self.token = config.token
   }
 
-  var hostIsValidURL: Bool {
+  private var hostIsValidURL: Bool {
     guard let url = URL(string: host) else {
       return false
     }
@@ -104,8 +104,14 @@ struct RegisterRequest: Equatable, Codable {
   }
 }
 
+struct SquareCompletedTransaction {
+  let reference: String
+  let transactionID: String
+  let clientTransactionID: String
+}
+
 struct ApisClient {
-  static let logger = Logger(subsystem: "net.syfaro.Register", category: "APIS")
+  static let logger = Logger(subsystem: Register.bundle, category: "APIS")
 
   enum ApisError: LocalizedError {
     case invalidHost
@@ -125,9 +131,10 @@ struct ApisClient {
   }
 
   var registerTerminal: (RegisterRequest) async throws -> Config
-  var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
   var getSquareToken: (Config) async throws -> String
-  var squareTransactionCompleted: (Config, String, String, String) async throws -> Bool
+  var squareTransactionCompleted: (Config, SquareCompletedTransaction) async throws -> Bool
+
+  var subscribeToEvents: (Config) async throws -> (MQTTClient, MQTTPublishListener)
 
   private static func url(_ host: String) throws -> URL {
     guard let url = URL(string: host) else {
@@ -136,38 +143,88 @@ struct ApisClient {
 
     return url
   }
+
+  private static func makeHttpRequest<Req: Encodable, Resp: Decodable>(
+    host: String,
+    endpoint: String,
+    req: Req,
+    key: String? = nil
+  ) async throws -> Resp {
+    let url = try Self.url(host)
+    let endpoint = url.appending(path: endpoint)
+    Self.logger.debug("Attempting to make request to \(endpoint, privacy: .public)")
+
+    let jsonEncoder = JSONEncoder()
+    let httpBody = try jsonEncoder.encode(req)
+
+    var request = URLRequest(url: endpoint)
+    request.httpMethod = "POST"
+    request.httpBody = httpBody
+    request.setValue("application/json", forHTTPHeaderField: "content-type")
+    if let key = key {
+      request.setValue(key, forHTTPHeaderField: "x-register-key")
+    }
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+    guard let httpResponse = response as? HTTPURLResponse else {
+      Self.logger.error("Response was not HTTPURLResponse")
+      throw ApisError.badResponse(-1)
+    }
+
+    guard httpResponse.statusCode == 200 else {
+      Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
+      throw ApisError.badResponse(httpResponse.statusCode)
+    }
+
+    let jsonDecoder = JSONDecoder()
+    let config = try jsonDecoder.decode(Resp.self, from: data)
+    return config
+  }
 }
 
 extension ApisClient: DependencyKey {
   static let liveValue: ApisClient = Self(
     registerTerminal: { req in
-      let url = try Self.url(req.host)
-      let endpoint = url.appending(path: "/terminal/register")
-      Self.logger.debug("Attempting to register at \(endpoint, privacy: .public)")
-
-      let jsonEncoder = JSONEncoder()
-      let httpBody = try jsonEncoder.encode(req)
-
-      var request = URLRequest(url: endpoint)
-      request.setValue("application/json", forHTTPHeaderField: "content-type")
-      request.httpMethod = "POST"
-      request.httpBody = httpBody
-
-      let (data, response) = try await URLSession.shared.data(for: request)
-      guard let httpResponse = response as? HTTPURLResponse else {
-        Self.logger.error("response was not HTTPURLResponse")
-        throw ApisError.badResponse(-1)
+      return try await Self.makeHttpRequest(
+        host: req.host,
+        endpoint: "/terminal/register",
+        req: req
+      )
+    },
+    getSquareToken: { config in
+      return try await Self.makeHttpRequest(
+        host: config.host,
+        endpoint: "/terminal/square/token",
+        req: true,
+        key: config.key
+      )
+    },
+    squareTransactionCompleted: { config, transaction in
+      struct TransactionData: Encodable {
+        let key: String
+        let reference: String
+        let clientTransactionId: String
+        let serverTransactionId: String
       }
 
-      guard httpResponse.statusCode == 200 else {
-        Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
-        throw ApisError.badResponse(httpResponse.statusCode)
+      let transactionData = TransactionData(
+        key: config.key,
+        reference: transaction.reference,
+        clientTransactionId: transaction.clientTransactionID,
+        serverTransactionId: transaction.transactionID
+      )
+
+      struct TransactionResponse: Decodable {
+        let success: Bool
       }
 
-      let jsonDecoder = JSONDecoder()
-
-      let config = try jsonDecoder.decode(Config.self, from: data)
-      return config
+      let resp: TransactionResponse = try await Self.makeHttpRequest(
+        host: config.host,
+        endpoint: "/terminal/square/completed",
+        req: transactionData,
+        key: config.key
+      )
+      return resp.success
     },
     subscribeToEvents: { config in
       let client = MQTTClient(
@@ -182,11 +239,12 @@ extension ApisClient: DependencyKey {
         Self.logger.debug("Connected to MQTT server")
 
         let topic = "register/\(config.terminalName)"
-        Self.logger.debug("Subscribing to MQTT topic: \(topic, privacy: .public)")
         let subscription = MQTTSubscribeInfo(
-          topicFilter: "register/\(config.terminalName)", qos: .atLeastOnce)
+          topicFilter: "register/\(config.terminalName)",
+          qos: .atLeastOnce
+        )
         _ = try await client.subscribe(to: [subscription])
-        Self.logger.debug("Created MQTT subscription")
+        Self.logger.debug("Created MQTT subscription to: \(topic, privacy: .public)")
 
         let listener = client.createPublishListener()
         Self.logger.debug("Created MQTT publish listener")
@@ -201,79 +259,6 @@ extension ApisClient: DependencyKey {
         try! client.syncShutdownGracefully()
         throw error
       }
-    },
-    getSquareToken: { config in
-      let url = try Self.url(config.host)
-      let endpoint = url.appending(path: "/terminal/square/token")
-      Self.logger.debug("Attempting to get Square token at \(endpoint, privacy: .public)")
-
-      var request = URLRequest(url: endpoint)
-      request.setValue(config.key, forHTTPHeaderField: "x-register-key")
-      request.httpMethod = "POST"
-
-      let (data, response) = try await URLSession.shared.data(for: request)
-      guard let httpResponse = response as? HTTPURLResponse else {
-        Self.logger.error("response was not HTTPURLResponse")
-        throw ApisError.badResponse(-1)
-      }
-
-      guard httpResponse.statusCode == 200 else {
-        Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
-        throw ApisError.badResponse(httpResponse.statusCode)
-      }
-
-      let jsonDecoder = JSONDecoder()
-
-      let config = try jsonDecoder.decode(String.self, from: data)
-      return config
-    },
-    squareTransactionCompleted: { config, reference, transactionID, clientTransactionID in
-      let url = try Self.url(config.host)
-      let endpoint = url.appending(path: "/terminal/square/completed")
-      Self.logger.debug("Attempting validate Square purchase at \(endpoint, privacy: .public)")
-
-      struct TransactionData: Encodable {
-        let key: String
-        let reference: String
-        let clientTransactionId: String
-        let serverTransactionId: String
-      }
-
-      let transactionData = TransactionData(
-        key: config.key,
-        reference: reference,
-        clientTransactionId: clientTransactionID,
-        serverTransactionId: transactionID
-      )
-
-      let jsonEncoder = JSONEncoder()
-      let httpBody = try jsonEncoder.encode(transactionData)
-
-      var request = URLRequest(url: endpoint)
-      request.setValue("application/json", forHTTPHeaderField: "content-type")
-      request.setValue(config.key, forHTTPHeaderField: "x-register-key")
-      request.httpMethod = "POST"
-      request.httpBody = httpBody
-
-      let (data, response) = try await URLSession.shared.data(for: request)
-      guard let httpResponse = response as? HTTPURLResponse else {
-        Self.logger.error("response was not HTTPURLResponse")
-        throw ApisError.badResponse(-1)
-      }
-
-      guard httpResponse.statusCode == 200 else {
-        Self.logger.warning("Got wrong status code: \(httpResponse.statusCode, privacy: .public)")
-        throw ApisError.badResponse(httpResponse.statusCode)
-      }
-
-      struct TransactionResponse: Decodable {
-        let success: Bool
-      }
-
-      let jsonDecoder = JSONDecoder()
-
-      let transactionResponse = try jsonDecoder.decode(TransactionResponse.self, from: data)
-      return transactionResponse.success
     }
   )
 }

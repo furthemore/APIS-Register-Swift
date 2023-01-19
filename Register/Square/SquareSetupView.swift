@@ -102,15 +102,17 @@ struct SquareSetupFeature: ReducerProtocol {
       state.isFetchingAuthCode = true
       return .task {
         return try await withCheckedThrowingContinuation { continuation in
-          SQRDReaderSDK.shared.deauthorize { error in
-            if let error = error {
-              continuation.resume(throwing: error)
-            } else {
-              continuation.resume(returning: .didRemoveAuthorization)
+          DispatchQueue.main.async {
+            SQRDReaderSDK.shared.deauthorize { error in
+              if let error = error {
+                continuation.resume(throwing: error)
+              } else {
+                continuation.resume(returning: .didRemoveAuthorization)
+              }
             }
           }
         }
-      }
+      }.animation(.easeInOut)
     case .didRemoveAuthorization:
       state.isFetchingAuthCode = false
       state.isAuthorized = false
@@ -159,7 +161,7 @@ struct SquareSetupFeature: ReducerProtocol {
       case let .failure(error):
         return .setErrorMessage("Reader SDK Error", error.localizedDescription)
       }
-    }
+    }.animation(.easeInOut)
   }
 }
 
@@ -234,23 +236,17 @@ struct SquareSetupView: View {
       if viewStore.isAuthorized {
         Label("Reader Authorized", systemImage: "checkmark")
           .contextMenu {
-            Button {
-              viewStore.send(.getAuthorizationCode)
-            } label: {
-              Label("Fetch New Token", systemImage: "arrow.clockwise")
-            }.disabled(viewStore.isFetchingAuthCode)
-
             Button(role: .destructive) {
-              viewStore.send(.getAuthorizationCode)
+              viewStore.send(.removeAuthorization, animation: .easeInOut)
             } label: {
-              Label("Deauthorize", systemImage: "trash")
+              Label("Remove Authorization", systemImage: "trash")
             }
           }
       } else {
         Button {
-          viewStore.send(.getAuthorizationCode)
+          viewStore.send(.getAuthorizationCode, animation: .easeInOut)
         } label: {
-          Label("Get Authorization Code", systemImage: "key.radiowaves.forward.fill")
+          Label("Get Authorization Code", systemImage: "key.horizontal")
         }.disabled(viewStore.isFetchingAuthCode)
       }
     }
@@ -276,8 +272,10 @@ struct SquareSetupView: View {
           name: "Card Processing",
           value: location.isCardProcessingActivated ? "Activated" : "Disabled"
         )
-      } else {
+      } else if viewStore.isAuthorized {
         Label("Unknown Location", systemImage: "exclamationmark.questionmark")
+      } else {
+        Label("Pending Authorization", systemImage: "globe.desk")
       }
     }
   }

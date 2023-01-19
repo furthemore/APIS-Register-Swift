@@ -41,6 +41,7 @@ struct PaymentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Register.themeColor)
         .statusBarHidden()
+        .preferredColorScheme(.light)
         .alert(
           store.scope(state: \.alert),
           dismiss: PaymentFeature.Action.dismissAlert

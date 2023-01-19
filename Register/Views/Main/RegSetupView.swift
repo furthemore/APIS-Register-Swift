@@ -128,7 +128,15 @@ struct RegSetupFeature: ReducerProtocol {
         return .none
       case .terminalEvent(.open):
         state.paymentState = .init(webViewURL: state.config.urlOrFallback)
-        state.setMode(.acceptPayments)
+        if state.squareIsReady {
+          state.setMode(.acceptPayments)
+        } else {
+          state.setAlert(
+            AlertContent(
+              title: "Opening Failed",
+              message: "Square is not yet configured."
+            ))
+        }
         return .none
       case .terminalEvent(.close):
         state.paymentState.currentTransactionReference = ""
@@ -227,21 +235,19 @@ struct RegSetupFeature: ReducerProtocol {
         return .none
       case let .squareCheckoutAction(.finished(.success(result))):
         let config = state.config
-        let currentTransactionReference = state.paymentState.currentTransactionReference
+        let transaction = SquareCompletedTransaction(
+          reference: state.paymentState.currentTransactionReference,
+          transactionID: result.transactionID ?? "",
+          clientTransactionID: result.transactionClientID
+        )
         return .task {
           let isValidTransaction: Bool
           do {
-            isValidTransaction = try await apis.squareTransactionCompleted(
-              config,
-              currentTransactionReference,
-              result.transactionID ?? "",
-              result.transactionClientID
-            )
+            isValidTransaction = try await apis.squareTransactionCompleted(config, transaction)
           } catch {
             Register.logger.error("Checkout failed: \(error, privacy: .public)")
             isValidTransaction = false
           }
-
           return .squareTransactionCompleted(isValidTransaction)
         }.animation(.easeInOut)
       case .squareTransactionCompleted(true):

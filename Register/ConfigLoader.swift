@@ -22,12 +22,19 @@ struct Config: Equatable, Codable {
   }
 
   static let empty = Self(
-    terminalName: "", host: "", token: "", key: "", webViewURL: nil, allowCash: nil, mqttHost: "",
-    mqttPort: -1)
+    terminalName: "",
+    host: "",
+    token: "",
+    key: "",
+    webViewURL: nil,
+    allowCash: nil,
+    mqttHost: "",
+    mqttPort: -1
+  )
 }
 
 struct ConfigLoader {
-  private static let logger = Logger(subsystem: "net.syfaro.Register", category: "ConfigLoader")
+  private static let logger = Logger(subsystem: Register.bundle, category: "ConfigLoader")
   private static let fileManager = FileManager.default
 
   enum ConfigError: Error {
@@ -57,7 +64,6 @@ struct ConfigLoader {
     let decoder = JSONDecoder()
     let config = try decoder.decode(Config.self, from: configData)
     Self.logger.info("Read existing configuration")
-
     return config
   }
 
@@ -69,7 +75,6 @@ struct ConfigLoader {
     let configData = try encoder.encode(config)
 
     try configData.write(to: configPath, options: .completeFileProtection)
-
     Self.logger.info("Successfully saved config")
   }
 
