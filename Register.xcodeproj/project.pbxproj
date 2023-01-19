@@ -28,8 +28,8 @@
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
 		E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* LocationDetailView.swift */; };
 		E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7F2978B9C600675A5D /* LocationManager.swift */; };
-		E16EF7C229774BBA00E03212 /* SquareReaderSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */; };
-		E16EF7C329774BBA00E03212 /* SquareReaderSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; };
+		E15CFC842978EC6300675A5D /* SquareReaderSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
@@ -60,7 +60,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				E16EF7C329774BBA00E03212 /* SquareReaderSDK.xcframework in Embed Frameworks */,
+				E15CFC842978EC6300675A5D /* SquareReaderSDK.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -90,7 +90,8 @@
 		E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareCheckoutDelegate.swift; sourceTree = "<group>"; };
 		E15CFC7D2978B97400675A5D /* LocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailView.swift; sourceTree = "<group>"; };
 		E15CFC7F2978B9C600675A5D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
-		E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SquareReaderSDK.xcframework; path = Register.xcodeproj/SquareReaderSDK.xcframework; sourceTree = "<group>"; };
+		E15CFC812978EB0100675A5D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = SquareReaderSDK.xcframework; sourceTree = "<group>"; };
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
 		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
@@ -101,8 +102,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E16EF7C229774BBA00E03212 /* SquareReaderSDK.xcframework in Frameworks */,
 				E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */,
+				E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */,
 				E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */,
 				E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */,
 			);
@@ -128,6 +129,7 @@
 		E1327EA329750A7A001DF7D6 = {
 			isa = PBXGroup;
 			children = (
+				E15CFC812978EB0100675A5D /* README.md */,
 				E1327EAE29750A7A001DF7D6 /* Register */,
 				E1327EBF29750A7B001DF7D6 /* RegisterTests */,
 				E1327EC929750A7B001DF7D6 /* RegisterUITests */,
@@ -227,7 +229,7 @@
 		E16EF7C029774BBA00E03212 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E16EF7C129774BBA00E03212 /* SquareReaderSDK.xcframework */,
+				E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
