@@ -12,13 +12,13 @@ struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.square) var square
 
   struct RegState: Equatable {
-    var needsConfigLoad: Bool = true
+    var needsConfigLoad = true
 
-    var isConnected: Bool = false
+    var isConnected = false
     var lastEvent: Date? = nil
 
-    var isAcceptingPayments: Bool = false
-    var isClosed: Bool = false
+    var isAcceptingPayments = false
+    var isClosed = false
 
     var isConfiguringSquare = false
     var squareIsReady = false
@@ -166,6 +166,7 @@ struct RegSetupFeature: ReducerProtocol {
       case let .updateStatus(connected, lastEvent):
         state.regState.isConnected = connected
         state.regState.lastEvent = lastEvent
+        state.configState.canUpdateConfig = !connected
         return .none
       case let .setMode(mode):
         state.setMode(mode)
@@ -276,6 +277,7 @@ struct RegSetupFeature: ReducerProtocol {
 
   private func connect(_ state: inout State, config: Config) -> EffectTask<Action> {
     state.regState.isConnected = false
+    state.configState.canUpdateConfig = true
 
     return .run { send in
       do {
@@ -332,6 +334,7 @@ struct RegSetupFeature: ReducerProtocol {
 
   private func disconnect(state: inout State) -> EffectTask<Action> {
     state.regState.isConnected = false
+    state.configState.canUpdateConfig = true
     return .cancel(id: SubID.self)
   }
 

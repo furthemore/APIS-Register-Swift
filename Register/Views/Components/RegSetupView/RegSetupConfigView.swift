@@ -11,6 +11,8 @@ struct RegSetupConfigFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
+    var canUpdateConfig = true
+
     var registerRequest = RegisterRequest()
     var isLoading = false
 
@@ -18,6 +20,10 @@ struct RegSetupConfigFeature: ReducerProtocol {
 
     var isRegistrationDisabled: Bool {
       isLoading || !registerRequest.isReady
+    }
+
+    var fieldColor: Color {
+      canUpdateConfig ? .primary : .secondary
     }
   }
 
@@ -83,6 +89,9 @@ struct RegSetupConfigView: View {
         }
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
+        .textContentType(.name)
+        .disabled(!viewStore.canUpdateConfig)
+        .foregroundColor(viewStore.fieldColor)
 
         TextField(
           text: viewStore.binding(\.registerRequest.$host),
@@ -93,6 +102,9 @@ struct RegSetupConfigView: View {
         .keyboardType(.URL)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
+        .textContentType(.URL)
+        .disabled(!viewStore.canUpdateConfig)
+        .foregroundColor(viewStore.fieldColor)
 
         SecureField(
           text: viewStore.binding(\.registerRequest.$token),
@@ -100,6 +112,9 @@ struct RegSetupConfigView: View {
         ) {
           Text("APIS Token")
         }
+        .textContentType(.password)
+        .disabled(!viewStore.canUpdateConfig)
+        .foregroundColor(viewStore.fieldColor)
 
         Button {
           viewStore.send(.showScanner(true))
