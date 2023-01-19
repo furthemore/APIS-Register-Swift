@@ -22,7 +22,7 @@ to build! All other configuration happens at runtime.
 The app can be manually configured or it can import settings from a QR code. The
 automatic setup data must be formatted as follows:
 
-```json
+```jsonc
 {
   "terminalName": "", // optional, can be specified in-app
   "host": "https://example.com/registration",
@@ -39,7 +39,7 @@ The app depends on the following API endpoints.
 This is called when registering the terminal using the provided configuration
 data. The body of the request is the following JSON:
 
-```json
+```jsonc
 {
     "terminalName": "",
     "host": "",
@@ -49,7 +49,7 @@ data. The body of the request is the following JSON:
 
 It expects a response like the following from the server:
 
-```json
+```jsonc
 {
     "terminalName": "", // may be different, the terminal will use this value
     "host": "",
@@ -81,7 +81,7 @@ This is called when the terminal completes a payment with the Square Reader SDK.
 It is authenticated with the `x-terminal-key` header. The body of this request
 is JSON-encoded like the following:
 
-```json
+```jsonc
 {
     "reference": "",
     "clientTransactionId": "",
@@ -91,7 +91,7 @@ is JSON-encoded like the following:
 
 It expects a response like the following:
 
-```json
+```jsonc
 {
     "success": true
 }
@@ -106,7 +106,7 @@ and payment behaviors.
 
 Switches the terminal to the payments screen.
 
-```json
+```jsonc
 {
     "open": {}
 }
@@ -116,7 +116,7 @@ Switches the terminal to the payments screen.
 
 Switches the terminal to the close screen.
 
-```json
+```jsonc
 {
     "close": {}
 }
@@ -126,7 +126,7 @@ Switches the terminal to the close screen.
 
 Clears the cart. This is automatically performed when switching modes.
 
-```json
+```jsonc
 {
     "clearCart": {}
 }
@@ -136,7 +136,7 @@ Clears the cart. This is automatically performed when switching modes.
 
 Processes the payment by starting the Square Reader SDK.
 
-```json
+```jsonc
 {
     "total": 100, // total payment expected, in cents
     "note": "", // a note attached to the transaction, displayed to the user
@@ -148,7 +148,7 @@ Processes the payment by starting the Square Reader SDK.
 
 Updates the payment screen cart.
 
-```json
+```jsonc
 {
     "updateCart": {
         "cart": {
