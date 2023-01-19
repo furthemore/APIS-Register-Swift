@@ -22,7 +22,7 @@ struct RegisterApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-  @Dependency(\.squareClient) var square
+  @Dependency(\.square) var square
 
   func application(
     _ application: UIApplication,

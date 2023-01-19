@@ -7,7 +7,7 @@ import SwiftUI
 
 struct RegSetupStatusView: View {
   @Binding var isConnected: Bool
-  @Binding var lastUpdated: Date?
+  @Binding var lastEvent: Date?
 
   var body: some View {
     Section("Status") {
@@ -20,7 +20,7 @@ struct RegSetupStatusView: View {
 
         Spacer()
 
-        if let lastUpdated = lastUpdated {
+        if let lastUpdated = lastEvent {
           Text(lastUpdated, format: .dateTime)
         } else {
           Text("never")
@@ -36,7 +36,7 @@ struct RegSetupStatusView_Previews: PreviewProvider {
     Form {
       RegSetupStatusView(
         isConnected: .constant(false),
-        lastUpdated: .constant(nil)
+        lastEvent: .constant(nil)
       )
     }
     .previewLayout(.fixed(width: 400, height: 200))
@@ -45,7 +45,7 @@ struct RegSetupStatusView_Previews: PreviewProvider {
     Form {
       RegSetupStatusView(
         isConnected: .constant(true),
-        lastUpdated: .constant(Date(timeIntervalSince1970: 1_673_932_324))
+        lastEvent: .constant(Date(timeIntervalSince1970: 1_673_932_324))
       )
     }
     .previewLayout(.fixed(width: 400, height: 200))

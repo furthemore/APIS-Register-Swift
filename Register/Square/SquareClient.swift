@@ -104,7 +104,7 @@ extension SquareClient: TestDependencyKey {
 }
 
 extension DependencyValues {
-  var squareClient: SquareClient {
+  var square: SquareClient {
     get { self[SquareClient.self] }
     set { self[SquareClient.self] = newValue }
   }

@@ -207,9 +207,9 @@
 		E1327EF029765D08001DF7D6 /* Main */ = {
 			isa = PBXGroup;
 			children = (
-				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
 				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
+				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -243,15 +243,23 @@
 		E16EF7C629774C4200E03212 /* Square */ = {
 			isa = PBXGroup;
 			children = (
+				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
-				E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
-				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
-				E15CFC7D2978B97400675A5D /* LocationDetailView.swift */,
-				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
+				E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */,
+				E1C527B72979A7DB009B2B54 /* Views */,
 			);
 			path = Square;
+			sourceTree = "<group>";
+		};
+		E1C527B72979A7DB009B2B54 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
+				E15CFC7D2978B97400675A5D /* LocationDetailView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		E1DE8EAA29766463003795C2 /* PaymentView */ = {
@@ -266,8 +274,8 @@
 		E1DE8EAB29766474003795C2 /* RegSetupView */ = {
 			isa = PBXGroup;
 			children = (
-				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
 				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
+				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
 			);
 			path = RegSetupView;
 			sourceTree = "<group>";

@@ -19,13 +19,16 @@
       subscriber.send(.cancelled)
     }
 
-    func checkoutController(_ checkoutController: SQRDCheckoutController, didFailWith error: Error)
-    {
+    func checkoutController(
+      _ checkoutController: SQRDCheckoutController,
+      didFailWith error: Error
+    ) {
       subscriber.send(.finished(.failure(error)))
     }
 
     func checkoutController(
-      _ checkoutController: SQRDCheckoutController, didFinishCheckoutWith result: SQRDCheckoutResult
+      _ checkoutController: SQRDCheckoutController,
+      didFinishCheckoutWith result: SQRDCheckoutResult
     ) {
       subscriber.send(.finished(.success(SquareCheckoutResult(result))))
     }

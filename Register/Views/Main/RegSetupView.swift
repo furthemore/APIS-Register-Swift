@@ -9,26 +9,25 @@ import SwiftUI
 
 struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
-  @Dependency(\.squareClient) var square
+  @Dependency(\.square) var square
 
   struct State: Equatable {
-    var isLoadingConfig: Bool = true
+    var needsConfigLoad: Bool = true
     private(set) var config: Config = Config.empty
 
     var isConnected: Bool = false
-    var lastUpdate: Date? = nil
+    var lastEvent: Date? = nil
 
     private(set) var isAcceptingPayments: Bool = false
     private(set) var isClosed: Bool = false
     var isConfiguringSquare = false
     var squareIsReady = false
 
+    private(set) var alertState: AlertState<Action>? = nil
+
     var configState: RegSetupConfigFeature.State = .init()
     var squareSetupState: SquareSetupFeature.State = .init()
-
     var paymentState: PaymentFeature.State = .init(webViewURL: Register.fallbackURL)
-
-    private(set) var alertState: AlertState<Action>? = nil
 
     mutating func setMode(_ mode: Mode) {
       isClosed = mode == .close
@@ -112,7 +111,7 @@ struct RegSetupFeature: ReducerProtocol {
         }
       case let .configLoaded(.success(config)):
         state.setConfig(config)
-        state.isLoadingConfig = false
+        state.needsConfigLoad = false
         if config != Config.empty {
           return connect(&state, config: state.config)
         } else {
@@ -171,9 +170,9 @@ struct RegSetupFeature: ReducerProtocol {
             ))
           return .none
         }
-      case let .updateStatus(connected, lastUpdate):
+      case let .updateStatus(connected, lastEvent):
         state.isConnected = connected
-        state.lastUpdate = lastUpdate
+        state.lastEvent = lastEvent
         return .none
       case let .setMode(mode):
         state.setMode(mode)
@@ -390,8 +389,8 @@ struct RegSetupView: View {
               get: \.isConnected,
               send: RegSetupFeature.Action.ignore
             ),
-            lastUpdated: viewStore.binding(
-              get: \.lastUpdate,
+            lastEvent: viewStore.binding(
+              get: \.lastEvent,
               send: RegSetupFeature.Action.ignore
             )
           )
@@ -436,7 +435,9 @@ struct RegSetupView: View {
         )
         .sheet(
           isPresented: viewStore.binding(
-            get: \.isConfiguringSquare, send: RegSetupFeature.Action.setConfiguringSquare)
+            get: \.isConfiguringSquare,
+            send: RegSetupFeature.Action.setConfiguringSquare
+          )
         ) {
           SquareSetupView(
             store: store.scope(
@@ -445,7 +446,7 @@ struct RegSetupView: View {
             ))
         }
         .onAppear {
-          if viewStore.isLoadingConfig {
+          if viewStore.needsConfigLoad {
             viewStore.send(.appeared)
           }
         }

@@ -11,7 +11,7 @@ import SwiftUI
 
 struct SquareSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
-  @Dependency(\.squareClient) var square
+  @Dependency(\.square) var square
   @Dependency(\.locationManager) var locationManager
 
   private enum LocationManagerId: Hashable {}
