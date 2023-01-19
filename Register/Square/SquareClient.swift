@@ -9,17 +9,6 @@ import UIKit
 
 // MARK: API models
 
-enum SquareError: Equatable, LocalizedError {
-  case missingViewController
-
-  var errorDescription: String? {
-    switch self {
-    case .missingViewController:
-      return "Could not find UIViewController needed to present."
-    }
-  }
-}
-
 struct SquareLocation: Equatable, Identifiable {
   let id: String
   let name: String
@@ -64,6 +53,17 @@ enum SquareSettingsAction: Equatable {
 enum SquareCheckoutAction: Equatable {
   case cancelled
   case finished(TaskResult<SquareCheckoutResult>)
+}
+
+enum SquareError: Equatable, LocalizedError {
+  case missingViewController
+
+  var errorDescription: String? {
+    switch self {
+    case .missingViewController:
+      return "Could not find UIViewController needed to present."
+    }
+  }
 }
 
 // MARK: API client interface

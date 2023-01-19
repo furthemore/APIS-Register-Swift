@@ -11,27 +11,32 @@ struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
 
-  struct State: Equatable {
+  struct RegState: Equatable {
     var needsConfigLoad: Bool = true
-    private(set) var config: Config = Config.empty
 
     var isConnected: Bool = false
     var lastEvent: Date? = nil
 
-    private(set) var isAcceptingPayments: Bool = false
-    private(set) var isClosed: Bool = false
+    var isAcceptingPayments: Bool = false
+    var isClosed: Bool = false
+
     var isConfiguringSquare = false
     var squareIsReady = false
+  }
 
-    private(set) var alertState: AlertState<Action>? = nil
+  struct State: Equatable {
+    private(set) var config: Config = Config.empty
 
+    var regState: RegState = .init()
+
+    var alertState: AlertState<Action>? = nil
     var configState: RegSetupConfigFeature.State = .init()
     var squareSetupState: SquareSetupFeature.State = .init()
     var paymentState: PaymentFeature.State = .init(webViewURL: Register.fallbackURL)
 
     mutating func setMode(_ mode: Mode) {
-      isClosed = mode == .close
-      isAcceptingPayments = mode == .acceptPayments
+      regState.isClosed = mode == .close
+      regState.isAcceptingPayments = mode == .acceptPayments
     }
 
     mutating func setConfig(_ config: Config) {
@@ -41,17 +46,8 @@ struct RegSetupFeature: ReducerProtocol {
       paymentState.webViewURL = config.urlOrFallback
     }
 
-    mutating func setAlert(_ content: AlertContent?) {
-      alertState = content?.alertState
-    }
-  }
-
-  struct AlertContent: Equatable {
-    var title: String
-    var message: String
-
-    var alertState: AlertState<Action> {
-      return AlertState {
+    mutating func setAlert(title: String, message: String) {
+      alertState = AlertState {
         TextState(title)
       } actions: {
         ButtonState(action: .alertDismissed) {
@@ -79,7 +75,7 @@ struct RegSetupFeature: ReducerProtocol {
     case squareCheckoutAction(SquareCheckoutAction)
     case squareTransactionCompleted(Bool)
     case paymentAction(PaymentFeature.Action)
-    case setErrorMessage(AlertContent?)
+    case setErrorMessage(title: String, message: String)
     case alertDismissed
     case ignore
     case scenePhaseChanged(ScenePhase)
@@ -100,7 +96,7 @@ struct RegSetupFeature: ReducerProtocol {
     Reduce { state, action in
       switch action {
       case .appeared:
-        state.squareIsReady = square.isAuthorized()
+        state.regState.squareIsReady = square.isAuthorized()
         return .task {
           do {
             let config = try await ConfigLoader.loadConfig()
@@ -111,7 +107,7 @@ struct RegSetupFeature: ReducerProtocol {
         }
       case let .configLoaded(.success(config)):
         state.setConfig(config)
-        state.needsConfigLoad = false
+        state.regState.needsConfigLoad = false
         if config != Config.empty {
           return connect(&state, config: state.config)
         } else {
@@ -119,21 +115,19 @@ struct RegSetupFeature: ReducerProtocol {
         }
       case let .configLoaded(.failure(error)):
         state.setAlert(
-          AlertContent(
-            title: "Config Load Error",
-            message: error.localizedDescription
-          ))
+          title: "Config Load Error",
+          message: error.localizedDescription
+        )
         return .none
       case .terminalEvent(.open):
         state.paymentState = .init(webViewURL: state.config.urlOrFallback)
-        if state.squareIsReady {
+        if state.regState.squareIsReady {
           state.setMode(.acceptPayments)
         } else {
           state.setAlert(
-            AlertContent(
-              title: "Opening Failed",
-              message: "Square is not yet configured."
-            ))
+            title: "Opening Failed",
+            message: "Square is not yet configured."
+          )
         }
         return .none
       case .terminalEvent(.close):
@@ -164,57 +158,53 @@ struct RegSetupFeature: ReducerProtocol {
           .cancellable(id: SquareID.self, cancelInFlight: true)
         } catch {
           state.setAlert(
-            AlertContent(
-              title: "Error",
-              message: "Could not create checkout."
-            ))
+            title: "Error",
+            message: "Could not create checkout."
+          )
           return .none
         }
       case let .updateStatus(connected, lastEvent):
-        state.isConnected = connected
-        state.lastEvent = lastEvent
+        state.regState.isConnected = connected
+        state.regState.lastEvent = lastEvent
         return .none
       case let .setMode(mode):
         state.setMode(mode)
         return .none
       case let .setConfiguringSquare(configuring):
-        state.isConfiguringSquare = configuring
+        state.regState.isConfiguringSquare = configuring
         return .none
       case .configAction(.registerTerminal):
         return disconnect(state: &state)
       case let .configAction(.registered(.success(config))):
         state.setConfig(config)
         state.setAlert(
-          AlertContent(
-            title: "Registration Complete",
-            message: "Successfully registered \(config.terminalName)"
-          ))
+          title: "Registration Complete",
+          message: "Successfully registered \(config.terminalName)"
+        )
         return connect(&state, config: state.config)
       case let .configAction(.registered(.failure(error))):
         state.setAlert(
-          AlertContent(
-            title: "Registration Error",
-            message: error.localizedDescription
-          ))
+          title: "Registration Error",
+          message: error.localizedDescription
+        )
         return .none
       case let .configAction(.scannerResult(.success(payload))):
         return decodeQRCode(state: &state, payload: payload)
       case let .configAction(.scannerResult(.failure(error))):
         state.setAlert(
-          AlertContent(
-            title: "QR Code Error",
-            message: error.localizedDescription
-          ))
+          title: "QR Code Error",
+          message: error.localizedDescription
+        )
         return .none
       case .configAction(.clear):
         return disconnect(state: &state)
       case .configAction:
         return .none
       case .squareSetupAction(.fetchedAuthToken):
-        state.squareIsReady = true
+        state.regState.squareIsReady = true
         return .none
       case .squareSetupAction(.didRemoveAuthorization):
-        state.squareIsReady = false
+        state.regState.squareIsReady = false
         return .none
       case .squareSetupAction:
         return .none
@@ -261,18 +251,18 @@ struct RegSetupFeature: ReducerProtocol {
         return .none
       case .paymentAction:
         return .none
-      case let .setErrorMessage(content):
-        state.setAlert(content)
+      case let .setErrorMessage(title, message):
+        state.setAlert(title: title, message: message)
         return .none
       case .alertDismissed:
-        state.setAlert(nil)
+        state.alertState = nil
         return .none
       case .ignore:
         return .none
       case let .scenePhaseChanged(phase):
-        if state.isConnected && phase == .active {
+        if state.regState.isConnected && phase == .active {
           return connect(&state, config: state.config)
-        } else if state.isConnected && phase == .background {
+        } else if state.regState.isConnected && phase == .background {
           return .cancel(id: SubID.self)
         } else {
           return .none
@@ -285,7 +275,7 @@ struct RegSetupFeature: ReducerProtocol {
   }
 
   private func connect(_ state: inout State, config: Config) -> EffectTask<Action> {
-    state.isConnected = false
+    state.regState.isConnected = false
 
     return .run { send in
       do {
@@ -313,18 +303,16 @@ struct RegSetupFeature: ReducerProtocol {
                 Register.logger.warning("Unknown event: \(error, privacy: .public)")
                 await send(
                   .setErrorMessage(
-                    AlertContent(
-                      title: "Unknown Event",
-                      message: error.localizedDescription
-                    )))
+                    title: "Unknown Event",
+                    message: error.localizedDescription
+                  ))
               }
             case .failure(let error):
               await send(
                 .setErrorMessage(
-                  AlertContent(
-                    title: "Error",
-                    message: error.localizedDescription
-                  )))
+                  title: "Error",
+                  message: error.localizedDescription
+                ))
             }
           }
         } onCancel: {
@@ -334,23 +322,22 @@ struct RegSetupFeature: ReducerProtocol {
       } catch {
         await send(
           .setErrorMessage(
-            AlertContent(
-              title: "Error",
-              message: error.localizedDescription
-            )))
+            title: "Error",
+            message: error.localizedDescription
+          ))
       }
     }
     .cancellable(id: SubID.self, cancelInFlight: true)
   }
 
   private func disconnect(state: inout State) -> EffectTask<Action> {
-    state.isConnected = false
+    state.regState.isConnected = false
     return .cancel(id: SubID.self)
   }
 
   private func decodeQRCode(state: inout State, payload: String) -> EffectTask<Action> {
     guard let data = payload.data(using: .utf8) else {
-      state.setAlert(AlertContent(title: "QR Code Error", message: "Not Valid UTF8"))
+      state.setAlert(title: "QR Code Error", message: "Not Valid UTF8")
       return .none
     }
 
@@ -359,17 +346,15 @@ struct RegSetupFeature: ReducerProtocol {
       let registerRequest = try jsonDecoder.decode(RegisterRequest.self, from: data)
       state.configState.registerRequest = registerRequest
       state.setAlert(
-        AlertContent(
-          title: "Imported QR Code",
-          message: "Successfully imported data."
-        ))
+        title: "Imported QR Code",
+        message: "Successfully imported data."
+      )
       return disconnect(state: &state)
     } catch {
       state.setAlert(
-        AlertContent(
-          title: "QR Code Error",
-          message: error.localizedDescription
-        ))
+        title: "QR Code Error",
+        message: error.localizedDescription
+      )
       return .none
     }
   }
@@ -382,7 +367,7 @@ struct RegSetupView: View {
 
   var body: some View {
     NavigationStack {
-      WithViewStore(store) { viewStore in
+      WithViewStore(store, observe: \.regState) { viewStore in
         Form {
           RegSetupStatusView(
             isConnected: viewStore.binding(
@@ -458,7 +443,9 @@ struct RegSetupView: View {
   }
 
   @ViewBuilder
-  func launch(_ viewStore: ViewStoreOf<RegSetupFeature>) -> some View {
+  func launch(
+    _ viewStore: ViewStore<RegSetupFeature.RegState, RegSetupFeature.Action>
+  ) -> some View {
     Section("Launch") {
       Button {
         viewStore.send(.setMode(.acceptPayments))

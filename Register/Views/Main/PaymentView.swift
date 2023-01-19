@@ -17,8 +17,8 @@ struct PaymentFeature: ReducerProtocol {
   }
 
   enum Action: Equatable {
-    case dismissView
     case dismissAlert
+    case dismissView
   }
 
   func reduce(into state: inout State, action: Action) -> EffectTask<Action> {

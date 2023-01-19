@@ -207,9 +207,9 @@
 		E1327EF029765D08001DF7D6 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
 				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
-				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -243,11 +243,11 @@
 		E16EF7C629774C4200E03212 /* Square */ = {
 			isa = PBXGroup;
 			children = (
-				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
 				E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */,
+				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1C527B72979A7DB009B2B54 /* Views */,
 			);
 			path = Square;

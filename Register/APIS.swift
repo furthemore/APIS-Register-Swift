@@ -4,11 +4,8 @@
 //
 
 import ComposableArchitecture
-import Dependencies
 import Foundation
-import IdentifiedCollections
 import MQTTNIO
-import SwiftUI
 import os
 
 enum TerminalEvent: Equatable, Codable {
