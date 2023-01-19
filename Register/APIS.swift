@@ -242,20 +242,21 @@ extension ApisClient: DependencyKey {
         host: config.mqttHost,
         port: config.mqttPort,
         identifier: config.terminalName,
-        eventLoopGroupProvider: .createNew
+        eventLoopGroupProvider: .createNew,
+        configuration: .init(
+          userName: config.mqttUserName,
+          password: config.mqttPassword,
+          useWebSockets: true
+        )
       )
 
       do {
         try await client.connect()
         Self.logger.debug("Connected to MQTT server")
 
-        let topic = "register/\(config.terminalName)"
-        let subscription = MQTTSubscribeInfo(
-          topicFilter: "register/\(config.terminalName)",
-          qos: .atLeastOnce
-        )
+        let subscription = MQTTSubscribeInfo(topicFilter: config.mqttTopic, qos: .atLeastOnce)
         _ = try await client.subscribe(to: [subscription])
-        Self.logger.debug("Created MQTT subscription to: \(topic, privacy: .public)")
+        Self.logger.debug("Created MQTT subscription to: \(config.mqttTopic, privacy: .public)")
 
         let listener = client.createPublishListener()
         Self.logger.debug("Created MQTT publish listener")

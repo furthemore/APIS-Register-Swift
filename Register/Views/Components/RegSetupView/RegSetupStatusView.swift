@@ -16,7 +16,7 @@ struct RegSetupStatusView: View {
       }
 
       HStack {
-        Text("Last Update")
+        Text("Last Event")
 
         Spacer()
 

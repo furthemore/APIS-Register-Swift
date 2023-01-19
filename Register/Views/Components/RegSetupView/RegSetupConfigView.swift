@@ -112,6 +112,7 @@ struct RegSetupConfigView: View {
         } label: {
           HStack(spacing: 8) {
             Label("Register Terminal", systemImage: "terminal")
+              .foregroundColor(viewStore.isLoading ? .secondary : .accentColor)
 
             if viewStore.isLoading {
               ProgressView()
@@ -122,7 +123,8 @@ struct RegSetupConfigView: View {
         Button(role: .destructive) {
           viewStore.send(.clear)
         } label: {
-          Label("Clear and Disconnect", systemImage: "trash")
+          Label("Clear Terminal Registration", systemImage: "trash")
+            .foregroundColor(.red)
         }
       }
       .disabled(viewStore.isLoading)

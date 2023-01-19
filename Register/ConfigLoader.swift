@@ -16,6 +16,9 @@ struct Config: Equatable, Codable {
 
   var mqttHost: String
   var mqttPort: Int
+  var mqttUserName: String
+  var mqttPassword: String
+  var mqttTopic: String
 
   var urlOrFallback: URL {
     webViewURL ?? Register.fallbackURL
@@ -29,7 +32,10 @@ struct Config: Equatable, Codable {
     webViewURL: nil,
     allowCash: nil,
     mqttHost: "",
-    mqttPort: -1
+    mqttPort: -1,
+    mqttUserName: "",
+    mqttPassword: "",
+    mqttTopic: ""
   )
 }
 

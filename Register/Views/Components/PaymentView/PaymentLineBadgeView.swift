@@ -12,6 +12,14 @@ struct PaymentLineBadgeView: View {
   let price: Decimal
   let discountedPrice: Decimal?
 
+  var isDiscounted: Bool {
+    guard let discountedPrice = discountedPrice else {
+      return false
+    }
+
+    return discountedPrice != price
+  }
+
   var body: some View {
     HStack {
       VStack(alignment: .leading) {
@@ -26,10 +34,10 @@ struct PaymentLineBadgeView: View {
 
       VStack(alignment: .trailing) {
         Text(price, format: .currency(code: "USD"))
-          .strikethrough(discountedPrice != nil)
-          .foregroundColor(discountedPrice == nil ? .primary : .secondary)
+          .strikethrough(isDiscounted)
+          .foregroundColor(isDiscounted ? .secondary : .primary)
 
-        if let discountedPrice = discountedPrice {
+        if let discountedPrice = discountedPrice, isDiscounted {
           Text(discountedPrice, format: .currency(code: "USD"))
         }
       }

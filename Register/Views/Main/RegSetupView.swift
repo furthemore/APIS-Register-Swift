@@ -336,7 +336,7 @@ struct RegSetupFeature: ReducerProtocol {
           }
         } onCancel: {
           Register.logger.info("Stream was cancelled")
-          try! client.syncShutdownGracefully()
+          try? client.syncShutdownGracefully()
         }
       } catch {
         await send(
@@ -402,11 +402,7 @@ struct RegSetupView: View {
             )
           )
 
-          RegSetupConfigView(
-            store: store.scope(
-              state: \.configState,
-              action: RegSetupFeature.Action.configAction
-            ))
+          launch(viewStore)
 
           Section("Square") {
             Button {
@@ -416,7 +412,11 @@ struct RegSetupView: View {
             }.disabled(!viewStore.isConnected)
           }
 
-          launch(viewStore)
+          RegSetupConfigView(
+            store: store.scope(
+              state: \.configState,
+              action: RegSetupFeature.Action.configAction
+            ))
         }
         .navigationTitle("Reg Setup")
         .alert(store.scope(state: \.alertState), dismiss: .alertDismissed)
@@ -460,23 +460,22 @@ struct RegSetupView: View {
         }
       }
     }
-    .statusBar(hidden: true)
   }
 
   @ViewBuilder
   func launch(_ viewStore: ViewStoreOf<RegSetupFeature>) -> some View {
     Section("Launch") {
       Button {
-        viewStore.send(.setMode(.close))
-      } label: {
-        Label("Close Terminal", systemImage: "xmark.square")
-      }
-
-      Button {
         viewStore.send(.setMode(.acceptPayments))
       } label: {
         Label("Accept Payments", systemImage: "creditcard")
       }.disabled(!viewStore.squareIsReady || !viewStore.isConnected)
+
+      Button {
+        viewStore.send(.setMode(.close))
+      } label: {
+        Label("Close Terminal", systemImage: "xmark.square")
+      }
     }
   }
 }
