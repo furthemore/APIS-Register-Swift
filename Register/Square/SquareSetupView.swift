@@ -7,11 +7,11 @@ import AVFoundation
 import Combine
 import ComposableArchitecture
 import CoreLocation
-import SquareReaderSDK
 import SwiftUI
 
 struct SquareSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
+  @Dependency(\.squareClient) var square
   @Dependency(\.locationManager) var locationManager
 
   private enum LocationManagerId: Hashable {}
@@ -20,7 +20,7 @@ struct SquareSetupFeature: ReducerProtocol {
     var locationAuthorizationStatus: CLAuthorizationStatus? = nil
     var recordPermission: AVAudioSession.RecordPermission? = nil
     var isAuthorized = false
-    var authorizedLocation: SQRDLocation? = nil
+    var authorizedLocation: SquareLocation? = nil
     var isFetchingAuthCode = false
     var alertState: AlertState<Action>? = nil
     var config: Config = .empty
@@ -40,14 +40,15 @@ struct SquareSetupFeature: ReducerProtocol {
     case didRemoveAuthorization
     case alertDismissed
     case setErrorMessage(String, String)
+    case squareSettingsAction(SquareSettingsAction)
   }
 
   func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
     case .appeared:
       state.recordPermission = AVAudioSession.sharedInstance().recordPermission
-      state.authorizedLocation = SQRDReaderSDK.shared.authorizedLocation
-      state.isAuthorized = SQRDReaderSDK.shared.isAuthorized
+      state.authorizedLocation = square.authorizedLocation()
+      state.isAuthorized = square.isAuthorized()
       let locationManager =
         locationManager
         .delegate()
@@ -80,12 +81,11 @@ struct SquareSetupFeature: ReducerProtocol {
       return .none
     case let .setPairingDevice(pairing):
       if pairing == true {
-        if let presentedViewController = Register.presentingViewController {
-          let settings = SQRDReaderSettingsController(delegate: SquareSettingsDelegate())
-          settings.present(from: presentedViewController)
-        } else {
+        do {
+          return try square.openSettings().map(Action.squareSettingsAction)
+        } catch {
           return .task {
-            return .setErrorMessage("App Error", "Could not find view to present from.")
+            return .setErrorMessage("App Error", error.localizedDescription)
           }
         }
       }
@@ -95,22 +95,17 @@ struct SquareSetupFeature: ReducerProtocol {
       return getAuthCode(config: state.config)
     case .fetchedAuthToken:
       state.isFetchingAuthCode = false
-      state.isAuthorized = SQRDReaderSDK.shared.isAuthorized
-      state.authorizedLocation = SQRDReaderSDK.shared.authorizedLocation
+      state.isAuthorized = square.isAuthorized()
+      state.authorizedLocation = square.authorizedLocation()
       return .none
     case .removeAuthorization:
       state.isFetchingAuthCode = true
       return .task {
-        return try await withCheckedThrowingContinuation { continuation in
-          DispatchQueue.main.async {
-            SQRDReaderSDK.shared.deauthorize { error in
-              if let error = error {
-                continuation.resume(throwing: error)
-              } else {
-                continuation.resume(returning: .didRemoveAuthorization)
-              }
-            }
-          }
+        do {
+          try await square.deauthorize()
+          return .didRemoveAuthorization
+        } catch {
+          return .setErrorMessage("Square Error", error.localizedDescription)
         }
       }.animation(.easeInOut)
     case .didRemoveAuthorization:
@@ -129,6 +124,8 @@ struct SquareSetupFeature: ReducerProtocol {
         buttons: [.default(TextState("OK"))]
       )
       return .none
+    case .squareSettingsAction:
+      return .none
     }
   }
 
@@ -141,24 +138,10 @@ struct SquareSetupFeature: ReducerProtocol {
         return .setErrorMessage("Error Fetching Token", error.localizedDescription)
       }
 
-      let result: TaskResult<SQRDLocation?> = await withCheckedContinuation { continuation in
-        DispatchQueue.main.async {
-          SQRDReaderSDK.shared.authorize(
-            withCode: code
-          ) { loc, error in
-            if let error = error {
-              continuation.resume(returning: .failure(error))
-            } else {
-              continuation.resume(returning: .success(loc))
-            }
-          }
-        }
-      }
-
-      switch result {
-      case .success:
+      do {
+        _ = try await square.authorize(code)
         return .fetchedAuthToken
-      case let .failure(error):
+      } catch {
         return .setErrorMessage("Reader SDK Error", error.localizedDescription)
       }
     }.animation(.easeInOut)
@@ -258,7 +241,7 @@ struct SquareSetupView: View {
       if let location = viewStore.authorizedLocation {
         LocationDetailView(
           name: "Location ID",
-          value: location.locationID
+          value: location.id
         )
         LocationDetailView(
           name: "Location Name",
@@ -278,19 +261,6 @@ struct SquareSetupView: View {
         Label("Pending Authorization", systemImage: "globe.desk")
       }
     }
-  }
-}
-
-class SquareSettingsDelegate: SQRDReaderSettingsControllerDelegate {
-  func readerSettingsControllerDidPresent(
-    _ readerSettingsController: SQRDReaderSettingsController
-  ) {}
-
-  func readerSettingsController(
-    _ readerSettingsController: SQRDReaderSettingsController,
-    didFailToPresentWith error: Error
-  ) {
-    fatalError("Could not present reader settings: \(error)")
   }
 }
 

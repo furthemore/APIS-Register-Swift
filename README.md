@@ -17,6 +17,12 @@ ruby <(curl https://connect.squareup.com/readersdk-installer) install --app-id $
 Xcode should automatically fetch the remaining dependencies and then it's ready
 to build! All other configuration happens at runtime.
 
+For evaluation purposes, it's possible to build the app with a mocked Square
+Reader SDK that always is authenticated and performs successful transactions.
+This can be activated by removing the SquareReaderSDK.xcframework from
+Frameworks, Libraries, and Embedded Content and removing the Square Reader SDK
+Setup build phase.
+
 ## Using
 
 The app can be manually configured or it can import settings from a QR code. The

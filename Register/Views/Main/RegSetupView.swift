@@ -5,11 +5,11 @@
 
 import Combine
 import ComposableArchitecture
-import SquareReaderSDK
 import SwiftUI
 
 struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
+  @Dependency(\.squareClient) var square
 
   struct State: Equatable {
     var isLoadingConfig: Bool = true
@@ -27,7 +27,6 @@ struct RegSetupFeature: ReducerProtocol {
     var squareSetupState: SquareSetupFeature.State = .init()
 
     var paymentState: PaymentFeature.State = .init(webViewURL: Register.fallbackURL)
-    var checkoutDelegate: SquareCheckoutDelegate? = nil
 
     private(set) var alertState: AlertState<Action>? = nil
 
@@ -102,7 +101,7 @@ struct RegSetupFeature: ReducerProtocol {
     Reduce { state, action in
       switch action {
       case .appeared:
-        state.squareIsReady = SQRDReaderSDK.shared.isAuthorized
+        state.squareIsReady = square.isAuthorized()
         return .task {
           do {
             let config = try await ConfigLoader.loadConfig()
@@ -154,29 +153,24 @@ struct RegSetupFeature: ReducerProtocol {
       case let .terminalEvent(.processPayment(total, note, reference)):
         state.paymentState.currentTransactionReference = reference
 
-        let amountMoney = SQRDMoney(amount: total)
-        let params = SQRDCheckoutParameters(amountMoney: amountMoney)
-        params.note = note
+        let params = SquareCheckoutParams(
+          amountMoney: total,
+          note: note,
+          allowCash: state.config.allowCash ?? false
+        )
 
-        if state.config.allowCash == true {
-          params.additionalPaymentTypes = [.cash]
+        do {
+          return try square.checkout(params)
+          .map(RegSetupFeature.Action.squareCheckoutAction)
+          .cancellable(id: SquareID.self, cancelInFlight: true)
+        } catch {
+          state.setAlert(
+            AlertContent(
+              title: "Error",
+              message: "Could not create checkout."
+            ))
+          return .none
         }
-
-        return Effect<SquareCheckoutAction, Never>.run { sub in
-          let delegate = SquareCheckoutDelegate(sub)
-
-          let presentingView = Register.presentingViewController!
-          DispatchQueue.main.async {
-            let controller = SQRDCheckoutController(parameters: params, delegate: delegate)
-            controller.present(from: presentingView)
-          }
-
-          return AnyCancellable {
-            _ = delegate
-          }
-        }
-        .map(RegSetupFeature.Action.squareCheckoutAction)
-        .cancellable(id: SquareID.self, cancelInFlight: true)
       case let .updateStatus(connected, lastUpdate):
         state.isConnected = connected
         state.lastUpdate = lastUpdate
@@ -237,8 +231,8 @@ struct RegSetupFeature: ReducerProtocol {
         let config = state.config
         let transaction = SquareCompletedTransaction(
           reference: state.paymentState.currentTransactionReference,
-          transactionID: result.transactionID ?? "",
-          clientTransactionID: result.transactionClientID
+          transactionID: result.transactionId ?? "",
+          clientTransactionID: result.transactionClientId
         )
         return .task {
           let isValidTransaction: Bool

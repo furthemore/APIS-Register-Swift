@@ -4,7 +4,6 @@
 //
 
 import ComposableArchitecture
-import SquareReaderSDK
 import SwiftUI
 
 @main
@@ -23,11 +22,13 @@ struct RegisterApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+  @Dependency(\.squareClient) var square
+
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    SQRDReaderSDK.initialize(applicationLaunchOptions: launchOptions)
+    square.initialize(launchOptions)
 
     return true
   }
