@@ -161,10 +161,9 @@
 			children = (
 				E1327EF329765F74001DF7D6 /* Register.swift */,
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
-				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
-				E1ED63032979E393005343A9 /* APIS */,
+				E1ED6308297A00D8005343A9 /* Dependencies */,
+				E1327EF229765D29001DF7D6 /* Layouts */,
 				E1327EEF29765CDF001DF7D6 /* Views */,
-				E16EF7C629774C4200E03212 /* Square */,
 				E1327EB329750A7B001DF7D6 /* Assets.xcassets */,
 				E1327EB529750A7B001DF7D6 /* Preview Content */,
 			);
@@ -199,31 +198,12 @@
 		E1327EEF29765CDF001DF7D6 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				E1327EF029765D08001DF7D6 /* Main */,
-				E1327EF129765D14001DF7D6 /* Components */,
-				E1327EF229765D29001DF7D6 /* Layouts */,
+				E1ED630B297A016A005343A9 /* Shared */,
+				E1ED6309297A0142005343A9 /* RegSetup */,
+				E1ED630A297A0159005343A9 /* Payment */,
+				E1ED630D297A01A4005343A9 /* Closed */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		E1327EF029765D08001DF7D6 /* Main */ = {
-			isa = PBXGroup;
-			children = (
-				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
-				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
-				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
-			);
-			path = Main;
-			sourceTree = "<group>";
-		};
-		E1327EF129765D14001DF7D6 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */,
-				E1DE8EAB29766474003795C2 /* RegSetupView */,
-				E1DE8EAA29766463003795C2 /* PaymentView */,
-			);
-			path = Components;
 			sourceTree = "<group>";
 		};
 		E1327EF229765D29001DF7D6 /* Layouts */ = {
@@ -242,53 +222,65 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		E16EF7C629774C4200E03212 /* Square */ = {
+		E1ED6308297A00D8005343A9 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
+				E1327EDC29750B7F001DF7D6 /* APISClient.swift */,
+				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
+				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
+				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
 				E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */,
-				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
-				E1C527B72979A7DB009B2B54 /* Views */,
 			);
-			path = Square;
+			path = Dependencies;
 			sourceTree = "<group>";
 		};
-		E1C527B72979A7DB009B2B54 /* Views */ = {
+		E1ED6309297A0142005343A9 /* RegSetup */ = {
+			isa = PBXGroup;
+			children = (
+				E1ED630C297A0179005343A9 /* SquareSetup */,
+				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
+				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
+				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
+			);
+			path = RegSetup;
+			sourceTree = "<group>";
+		};
+		E1ED630A297A0159005343A9 /* Payment */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
+				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
+				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
+			);
+			path = Payment;
+			sourceTree = "<group>";
+		};
+		E1ED630B297A016A005343A9 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		E1ED630C297A0179005343A9 /* SquareSetup */ = {
 			isa = PBXGroup;
 			children = (
 				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
 				E15CFC7D2978B97400675A5D /* LocationDetailView.swift */,
 			);
-			path = Views;
+			path = SquareSetup;
 			sourceTree = "<group>";
 		};
-		E1DE8EAA29766463003795C2 /* PaymentView */ = {
+		E1ED630D297A01A4005343A9 /* Closed */ = {
 			isa = PBXGroup;
 			children = (
-				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
-				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
+				E1327EDE29750F6C001DF7D6 /* ClosedView.swift */,
 			);
-			path = PaymentView;
-			sourceTree = "<group>";
-		};
-		E1DE8EAB29766474003795C2 /* RegSetupView */ = {
-			isa = PBXGroup;
-			children = (
-				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
-				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
-			);
-			path = RegSetupView;
-			sourceTree = "<group>";
-		};
-		E1ED63032979E393005343A9 /* APIS */ = {
-			isa = PBXGroup;
-			children = (
-				E1327EDC29750B7F001DF7D6 /* APISClient.swift */,
-				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
-			);
-			path = APIS;
+			path = Closed;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
