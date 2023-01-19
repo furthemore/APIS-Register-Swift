@@ -22,7 +22,7 @@
 		E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */; };
 		E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */; };
 		E1327EE92975C1D6001DF7D6 /* TwoColumnLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */; };
-		E1327EEB29760AA9001DF7D6 /* ConfigLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */; };
+		E1327EEB29760AA9001DF7D6 /* ConfigClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
@@ -89,7 +89,7 @@
 		E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBadgeView.swift; sourceTree = "<group>"; };
 		E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLineBasicView.swift; sourceTree = "<group>"; };
 		E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnLayout.swift; sourceTree = "<group>"; };
-		E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigLoader.swift; sourceTree = "<group>"; };
+		E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigClient.swift; sourceTree = "<group>"; };
 		E1327EF329765F74001DF7D6 /* Register.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Register.swift; sourceTree = "<group>"; };
 		E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareCheckoutDelegate.swift; sourceTree = "<group>"; };
 		E15CFC7D2978B97400675A5D /* LocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailView.swift; sourceTree = "<group>"; };
@@ -161,7 +161,7 @@
 			children = (
 				E1327EF329765F74001DF7D6 /* Register.swift */,
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
-				E1327EEA29760AA9001DF7D6 /* ConfigLoader.swift */,
+				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
 				E1ED63032979E393005343A9 /* APIS */,
 				E1327EEF29765CDF001DF7D6 /* Views */,
 				E16EF7C629774C4200E03212 /* Square */,
@@ -454,7 +454,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1327EEB29760AA9001DF7D6 /* ConfigLoader.swift in Sources */,
+				E1327EEB29760AA9001DF7D6 /* ConfigClient.swift in Sources */,
 				E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */,
 				E1327EF429765F74001DF7D6 /* Register.swift in Sources */,
 				E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */,

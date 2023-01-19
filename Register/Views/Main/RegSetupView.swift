@@ -8,6 +8,7 @@ import ComposableArchitecture
 import SwiftUI
 
 struct RegSetupFeature: ReducerProtocol {
+  @Dependency(\.config) var config
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
 
@@ -98,7 +99,7 @@ struct RegSetupFeature: ReducerProtocol {
         state.regState.squareIsReady = square.isAuthorized()
         return .task {
           do {
-            let config = try await ConfigLoader.loadConfig()
+            let config = try await config.load()
             return .configLoaded(.success(config ?? Config.empty))
           } catch {
             return .configLoaded(.failure(error))

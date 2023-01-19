@@ -8,6 +8,7 @@ import ComposableArchitecture
 import SwiftUI
 
 struct RegSetupConfigFeature: ReducerProtocol {
+  @Dependency(\.config) var config
   @Dependency(\.apis) var apis
 
   struct State: Equatable {
@@ -55,9 +56,9 @@ struct RegSetupConfigFeature: ReducerProtocol {
         return .task {
           let req = req
           do {
-            let config = try await apis.registerTerminal(req)
-            try await ConfigLoader.saveConfig(config)
-            return .registered(.success(config))
+            let fetchedConfig = try await apis.registerTerminal(req)
+            try await config.save(fetchedConfig)
+            return .registered(.success(fetchedConfig))
           } catch {
             return .registered(.failure(error))
           }
@@ -68,7 +69,7 @@ struct RegSetupConfigFeature: ReducerProtocol {
       case .clear:
         state = .init()
         return .fireAndForget {
-          try? await ConfigLoader.clearConfig()
+          try? await config.clear()
         }
       }
     }
