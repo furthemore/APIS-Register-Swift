@@ -38,6 +38,20 @@ extension LocationManager: DependencyKey {
   }
 }
 
+extension LocationManager: TestDependencyKey {
+  static var previewValue = Self(
+    authorizationStatus: { .authorizedAlways },
+    requestWhenInUseAuthorization: {},
+    delegate: { .none }
+  )
+
+  static var testValue = Self(
+    authorizationStatus: unimplemented("\(Self.self).authorizationStatus"),
+    requestWhenInUseAuthorization: unimplemented("\(Self.self).requestWhenInUseAuthorization"),
+    delegate: unimplemented("\(Self.self).delegate")
+  )
+}
+
 extension DependencyValues {
   var locationManager: LocationManager {
     get { self[LocationManager.self] }

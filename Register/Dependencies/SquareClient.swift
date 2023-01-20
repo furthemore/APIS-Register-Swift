@@ -44,6 +44,11 @@ struct SquareCheckoutResult: Equatable {
     self.transactionId = transactionId
     self.transactionClientId = transactionClientId
   }
+
+  static let mock = Self(
+    transactionId: "MOCK-TX-ID",
+    transactionClientId: "MOCK-CLIENT-TX-ID"
+  )
 }
 
 enum SquareSettingsAction: Equatable {
@@ -79,6 +84,19 @@ struct SquareClient {
 
   var openSettings: () throws -> EffectTask<SquareSettingsAction>
   var checkout: (SquareCheckoutParams) throws -> EffectTask<SquareCheckoutAction>
+
+  static var presentingViewController: UIViewController? {
+    return UIApplication.shared.connectedScenes.filter {
+      $0.activationState == .foregroundActive
+    }
+    .compactMap { $0 as? UIWindowScene }
+    .first?
+    .windows
+    .filter { $0.isKeyWindow }
+    .first?
+    .rootViewController?
+    .presentedViewController
+  }
 }
 
 extension SquareClient: TestDependencyKey {

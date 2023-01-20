@@ -12,13 +12,14 @@ import SwiftUI
 struct SquareSetupFeature: ReducerProtocol {
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
+  @Dependency(\.avAudioSession) var avAudioSession
   @Dependency(\.locationManager) var locationManager
 
   private enum LocationManagerId: Hashable {}
 
   struct State: Equatable {
     var locationAuthorizationStatus: CLAuthorizationStatus? = nil
-    var recordPermission: AVAudioSession.RecordPermission? = nil
+    var recordPermission: RecordPermission? = nil
     var isAuthorized = false
     var authorizedLocation: SquareLocation? = nil
     var isFetchingAuthCode = false
@@ -30,12 +31,12 @@ struct SquareSetupFeature: ReducerProtocol {
     case appeared
     case locationManager(LocationAction)
     case requestLocation
-    case recordPermission(AVAudioSession.RecordPermission)
+    case recordPermission(RecordPermission)
     case requestRecordPermission
     case openSettings
     case setPairingDevice(Bool)
     case getAuthorizationCode
-    case fetchedAuthToken
+    case fetchedAuthToken(SquareLocation)
     case removeAuthorization
     case didRemoveAuthorization
     case alertDismissed
@@ -46,7 +47,7 @@ struct SquareSetupFeature: ReducerProtocol {
   func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
     case .appeared:
-      state.recordPermission = AVAudioSession.sharedInstance().recordPermission
+      state.recordPermission = avAudioSession.recordPermission()
       state.authorizedLocation = square.authorizedLocation()
       state.isAuthorized = square.isAuthorized()
       let locationManager =
@@ -65,15 +66,7 @@ struct SquareSetupFeature: ReducerProtocol {
       state.recordPermission = permission
       return .none
     case .requestRecordPermission:
-      return .task {
-        let permission = await withCheckedContinuation { continuation in
-          AVAudioSession.sharedInstance().requestRecordPermission { permitted in
-            let permission: AVAudioSession.RecordPermission = permitted ? .granted : .denied
-            continuation.resume(with: .success(permission))
-          }
-        }
-        return .recordPermission(permission)
-      }
+      return avAudioSession.requestRecordPermission().map(Action.recordPermission)
     case .openSettings:
       if let url = URL(string: UIApplication.openSettingsURLString) {
         UIApplication.shared.open(url)
@@ -93,10 +86,10 @@ struct SquareSetupFeature: ReducerProtocol {
     case .getAuthorizationCode:
       state.isFetchingAuthCode = true
       return getAuthCode(config: state.config)
-    case .fetchedAuthToken:
+    case let .fetchedAuthToken(location):
       state.isFetchingAuthCode = false
-      state.isAuthorized = square.isAuthorized()
-      state.authorizedLocation = square.authorizedLocation()
+      state.isAuthorized = true
+      state.authorizedLocation = location
       return .none
     case .removeAuthorization:
       state.isFetchingAuthCode = true
@@ -139,8 +132,8 @@ struct SquareSetupFeature: ReducerProtocol {
       }
 
       do {
-        _ = try await square.authorize(code)
-        return .fetchedAuthToken
+        let location = try await square.authorize(code)
+        return .fetchedAuthToken(location)
       } catch {
         return .setErrorMessage("Reader SDK Error", error.localizedDescription)
       }

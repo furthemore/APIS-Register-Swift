@@ -62,7 +62,7 @@ import ComposableArchitecture
         }
       },
       openSettings: {
-        guard let presentingView = Register.presentingViewController else {
+        guard let presentingView = SquareClient.presentingViewController else {
           throw SquareError.missingViewController
         }
 
@@ -80,7 +80,7 @@ import ComposableArchitecture
         }
       },
       checkout: { params in
-        guard let presentingView = Register.presentingViewController else {
+        guard let presentingView = SquareClient.presentingViewController else {
           throw SquareError.missingViewController
         }
 

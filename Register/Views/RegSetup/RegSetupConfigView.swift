@@ -54,7 +54,6 @@ struct RegSetupConfigFeature: ReducerProtocol {
         state.isLoading = true
         let req = state.registerRequest
         return .task {
-          let req = req
           do {
             let fetchedConfig = try await apis.registerTerminal(req)
             try await config.save(fetchedConfig)

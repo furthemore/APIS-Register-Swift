@@ -15,17 +15,4 @@ struct Register {
 
   static let simulatedQRCode =
     #"{"terminalName": "name", "host": "http://localhost:8080", "token": "helloworld"}"#
-
-  static var presentingViewController: UIViewController? {
-    return UIApplication.shared.connectedScenes.filter {
-      $0.activationState == .foregroundActive
-    }
-    .compactMap { $0 as? UIWindowScene }
-    .first?
-    .windows
-    .filter { $0.isKeyWindow }
-    .first?
-    .rootViewController?
-    .presentedViewController
-  }
 }

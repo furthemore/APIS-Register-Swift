@@ -44,6 +44,7 @@ struct Config: Equatable, Codable {
     host: "http://example.com",
     token: "MOCK-TOKEN",
     key: "MOCK-KEY",
+    webViewURL: URL(string: "http://example.com"),
     mqttHost: "http://example.com",
     mqttPort: 443,
     mqttUserName: "MOCK-USERNAME",

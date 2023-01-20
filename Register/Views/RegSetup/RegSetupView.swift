@@ -11,6 +11,7 @@ struct RegSetupFeature: ReducerProtocol {
   @Dependency(\.config) var config
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
+  @Dependency(\.date) var date
 
   struct RegState: Equatable {
     var needsConfigLoad = true
@@ -189,6 +190,7 @@ struct RegSetupFeature: ReducerProtocol {
         }.animation(.easeInOut)
       case .squareTransactionCompleted(true):
         state.paymentState.cart = nil
+        state.paymentState.currentTransactionReference = ""
         state.paymentState.alert = AlertState(
           title: TextState("Thanks!"),
           message: TextState("Payment successful.")
@@ -281,7 +283,7 @@ struct RegSetupFeature: ReducerProtocol {
     event: TaskResult<TerminalEvent>
   ) -> EffectTask<Action> {
     state.regState.isConnected = true
-    state.regState.lastEvent = Date()
+    state.regState.lastEvent = date.now
     state.configState.canUpdateConfig = false
 
     state.paymentState.currentTransactionReference = ""
@@ -322,7 +324,7 @@ struct RegSetupFeature: ReducerProtocol {
       do {
         return try square.checkout(params)
           .map(RegSetupFeature.Action.squareCheckoutAction)
-          .cancellable(id: SquareID.self, cancelInFlight: true)
+          .cancellable(id: SquareID.self)
       } catch {
         state.setAlert(
           title: "Error",

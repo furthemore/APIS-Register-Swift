@@ -12,11 +12,13 @@ struct RegisterApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RegSetupView(
-        store: Store(
-          initialState: .init(),
-          reducer: RegSetupFeature()
-        ))
+      if !_XCTIsTesting {
+        RegSetupView(
+          store: Store(
+            initialState: .init(),
+            reducer: RegSetupFeature()
+          ))
+      }
     }
   }
 }

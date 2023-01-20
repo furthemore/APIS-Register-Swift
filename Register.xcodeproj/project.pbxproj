@@ -11,7 +11,6 @@
 		E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EB129750A7A001DF7D6 /* RegSetupView.swift */; };
 		E1327EB429750A7B001DF7D6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1327EB329750A7B001DF7D6 /* Assets.xcassets */; };
 		E1327EB729750A7B001DF7D6 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1327EB629750A7B001DF7D6 /* Preview Assets.xcassets */; };
-		E1327EC129750A7B001DF7D6 /* RegisterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EC029750A7B001DF7D6 /* RegisterTests.swift */; };
 		E1327ECB29750A7B001DF7D6 /* RegisterUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327ECA29750A7B001DF7D6 /* RegisterUITests.swift */; };
 		E1327ECD29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327ECC29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift */; };
 		E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EDA29750ACB001DF7D6 /* ComposableArchitecture */; };
@@ -25,6 +24,9 @@
 		E1327EEB29760AA9001DF7D6 /* ConfigClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
+		E1553F81297A240E0081A6EF /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1553F80297A240E0081A6EF /* MQTTNIO */; };
+		E1553F83297A33750081A6EF /* RegSetupConfigViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */; };
+		E1553F85297A37160081A6EF /* RegSetupViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F84297A37160081A6EF /* RegSetupViewTests.swift */; };
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
 		E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* LocationDetailView.swift */; };
 		E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7F2978B9C600675A5D /* LocationManager.swift */; };
@@ -38,6 +40,9 @@
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
 		E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = E1DE8EB12977138B003795C2 /* CodeScanner */; };
 		E1ED63052979E40C005343A9 /* APISClient+DependencyKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */; };
+		E1ED630F297A094F005343A9 /* PaymentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1ED630E297A094F005343A9 /* PaymentViewTests.swift */; };
+		E1ED6318297A0F62005343A9 /* SquareSetupViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1ED6317297A0F62005343A9 /* SquareSetupViewTests.swift */; };
+		E1ED631A297A10BA005343A9 /* AVAudioSessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,7 +83,6 @@
 		E1327EB329750A7B001DF7D6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E1327EB629750A7B001DF7D6 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E1327EBC29750A7B001DF7D6 /* RegisterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RegisterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1327EC029750A7B001DF7D6 /* RegisterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterTests.swift; sourceTree = "<group>"; };
 		E1327EC629750A7B001DF7D6 /* RegisterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RegisterUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1327ECA29750A7B001DF7D6 /* RegisterUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUITests.swift; sourceTree = "<group>"; };
 		E1327ECC29750A7B001DF7D6 /* RegisterUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUITestsLaunchTests.swift; sourceTree = "<group>"; };
@@ -91,6 +95,8 @@
 		E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnLayout.swift; sourceTree = "<group>"; };
 		E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigClient.swift; sourceTree = "<group>"; };
 		E1327EF329765F74001DF7D6 /* Register.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Register.swift; sourceTree = "<group>"; };
+		E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigViewTests.swift; sourceTree = "<group>"; };
+		E1553F84297A37160081A6EF /* RegSetupViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupViewTests.swift; sourceTree = "<group>"; };
 		E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareCheckoutDelegate.swift; sourceTree = "<group>"; };
 		E15CFC7D2978B97400675A5D /* LocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailView.swift; sourceTree = "<group>"; };
 		E15CFC7F2978B9C600675A5D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
@@ -103,6 +109,9 @@
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
 		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
 		E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APISClient+DependencyKey.swift"; sourceTree = "<group>"; };
+		E1ED630E297A094F005343A9 /* PaymentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentViewTests.swift; sourceTree = "<group>"; };
+		E1ED6317297A0F62005343A9 /* SquareSetupViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupViewTests.swift; sourceTree = "<group>"; };
+		E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioSessionClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +130,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1553F81297A240E0081A6EF /* MQTTNIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,7 +191,10 @@
 		E1327EBF29750A7B001DF7D6 /* RegisterTests */ = {
 			isa = PBXGroup;
 			children = (
-				E1327EC029750A7B001DF7D6 /* RegisterTests.swift */,
+				E1ED630E297A094F005343A9 /* PaymentViewTests.swift */,
+				E1ED6317297A0F62005343A9 /* SquareSetupViewTests.swift */,
+				E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */,
+				E1553F84297A37160081A6EF /* RegSetupViewTests.swift */,
 			);
 			path = RegisterTests;
 			sourceTree = "<group>";
@@ -229,6 +242,7 @@
 				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
 				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
+				E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
@@ -324,6 +338,9 @@
 				E1327EBE29750A7B001DF7D6 /* PBXTargetDependency */,
 			);
 			name = RegisterTests;
+			packageProductDependencies = (
+				E1553F80297A240E0081A6EF /* MQTTNIO */,
+			);
 			productName = RegisterTests;
 			productReference = E1327EBC29750A7B001DF7D6 /* RegisterTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -466,6 +483,7 @@
 				E1ED63052979E40C005343A9 /* APISClient+DependencyKey.swift in Sources */,
 				E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */,
 				E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */,
+				E1ED631A297A10BA005343A9 /* AVAudioSessionClient.swift in Sources */,
 				E1327EE92975C1D6001DF7D6 /* TwoColumnLayout.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -474,7 +492,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1327EC129750A7B001DF7D6 /* RegisterTests.swift in Sources */,
+				E1ED6318297A0F62005343A9 /* SquareSetupViewTests.swift in Sources */,
+				E1ED630F297A094F005343A9 /* PaymentViewTests.swift in Sources */,
+				E1553F83297A33750081A6EF /* RegSetupConfigViewTests.swift in Sources */,
+				E1553F85297A37160081A6EF /* RegSetupViewTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -836,6 +857,11 @@
 			productName = ComposableArchitecture;
 		};
 		E1327EED29762EE4001DF7D6 /* MQTTNIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
+			productName = MQTTNIO;
+		};
+		E1553F80297A240E0081A6EF /* MQTTNIO */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
 			productName = MQTTNIO;

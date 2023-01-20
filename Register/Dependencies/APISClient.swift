@@ -26,6 +26,24 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
   let effectiveLevelPrice: Decimal
   let discountedPrice: Decimal?
 
+  init(
+    id: Int,
+    firstName: String,
+    lastName: String,
+    badgeName: String,
+    effectiveLevelName: String,
+    effectiveLevelPrice: Decimal,
+    discountedPrice: Decimal? = nil
+  ) {
+    self.id = id
+    self.firstName = firstName
+    self.lastName = lastName
+    self.badgeName = badgeName
+    self.effectiveLevelName = effectiveLevelName
+    self.effectiveLevelPrice = effectiveLevelPrice
+    self.discountedPrice = discountedPrice
+  }
+
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.id = try container.decode(Int.self, forKey: .id)
@@ -38,6 +56,16 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
     self.discountedPrice = Decimal(
       string: try container.decodeIfPresent(String.self, forKey: .discountedPrice) ?? "")
   }
+
+  static let mock = Self(
+    id: 1,
+    firstName: "First",
+    lastName: "Last",
+    badgeName: "Badge",
+    effectiveLevelName: "Level",
+    effectiveLevelPrice: 30,
+    discountedPrice: nil
+  )
 }
 
 struct TerminalCart: Equatable, Codable {
@@ -46,14 +74,6 @@ struct TerminalCart: Equatable, Codable {
   let organizationDonation: Decimal
   let totalDiscount: Decimal?
   let total: Decimal
-
-  static let empty = Self(
-    badges: .init(),
-    charityDonation: 0,
-    organizationDonation: 0,
-    totalDiscount: nil,
-    total: 0
-  )
 
   init(
     badges: IdentifiedArrayOf<TerminalBadge>,
@@ -81,6 +101,22 @@ struct TerminalCart: Equatable, Codable {
       string: try container.decodeIfPresent(String.self, forKey: .totalDiscount) ?? "")
     self.total = Decimal(string: try container.decode(String.self, forKey: .total))!
   }
+
+  static let empty = Self(
+    badges: .init(),
+    charityDonation: 0,
+    organizationDonation: 0,
+    totalDiscount: nil,
+    total: 0
+  )
+
+  static let mock = Self(
+    badges: .init(uniqueElements: [.mock]),
+    charityDonation: 10,
+    organizationDonation: 20,
+    totalDiscount: nil,
+    total: 60
+  )
 }
 
 struct RegisterRequest: Equatable, Codable {
@@ -112,12 +148,24 @@ struct RegisterRequest: Equatable, Codable {
   var isReady: Bool {
     return !terminalName.isEmpty && !host.isEmpty && !token.isEmpty && hostIsValidURL
   }
+
+  static let mock = Self(
+    terminalName: "mock",
+    host: "http://example.com",
+    token: "mock"
+  )
 }
 
 struct SquareCompletedTransaction: Equatable, Codable {
   let reference: String
   let transactionID: String
   let clientTransactionID: String
+
+  static let mock = Self(
+    reference: "MOCK-REF",
+    transactionID: SquareCheckoutResult.mock.transactionId ?? "",
+    clientTransactionID: SquareCheckoutResult.mock.transactionClientId
+  )
 }
 
 enum ApisError: LocalizedError {
