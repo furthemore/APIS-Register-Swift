@@ -144,9 +144,11 @@ Processes the payment by starting the Square Reader SDK.
 
 ```jsonc
 {
-    "total": 100, // total payment expected, in cents
-    "note": "", // a note attached to the transaction, displayed to the user
-    "reference": "" // an internal reference, included when completing the transaction
+    "processPayment": {
+        "total": 100, // total payment expected, in cents
+        "note": "", // a note attached to the transaction, displayed to the user
+        "reference": "" // an internal reference, included when completing the transaction
+    }
 }
 ```
 
@@ -163,8 +165,10 @@ Updates the payment screen cart.
                 "firstName": "",
                 "lastName": "",
                 "badgeName": "",
-                "effectiveLevelName": "",
-                "effectiveLevelPrice": "",
+                "effectiveLevel": {
+                    "name": "",
+                    "price": "0.00"
+                },
                 "discountedPrice": null
             }],
             "charityDonation": "10.00",

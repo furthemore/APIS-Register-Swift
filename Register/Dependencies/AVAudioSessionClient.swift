@@ -9,7 +9,7 @@ import ComposableArchitecture
 enum RecordPermission: Equatable {
   case undetermined, granted, denied
 
-  init(_ permission: AVAudioSession.RecordPermission) {
+  init(_ permission: AVAudioApplication.recordPermission) {
     switch permission {
     case .undetermined:
       self = .undetermined
@@ -21,9 +21,10 @@ enum RecordPermission: Equatable {
   }
 }
 
+@DependencyClient
 struct AVAudioSessionClient {
-  var recordPermission: () -> RecordPermission
-  var requestRecordPermission: () -> EffectTask<RecordPermission>
+  var recordPermission: () -> RecordPermission = { .denied }
+  var requestRecordPermission: () -> Effect<RecordPermission> = { .none }
 }
 
 extension AVAudioSessionClient: TestDependencyKey {
@@ -32,23 +33,21 @@ extension AVAudioSessionClient: TestDependencyKey {
     requestRecordPermission: { .none }
   )
 
-  static var testValue = Self(
-    recordPermission: unimplemented("\(Self.self).denied"),
-    requestRecordPermission: unimplemented("\(Self.self).requestRecordPermission")
-  )
+  static var testValue = Self()
 }
 
 extension AVAudioSessionClient: DependencyKey {
   static var liveValue = Self(
-    recordPermission: { RecordPermission(AVAudioSession.sharedInstance().recordPermission) },
+    recordPermission: { RecordPermission(AVAudioApplication.shared.recordPermission) },
     requestRecordPermission: {
-      return .task {
-        return await withCheckedContinuation { cont in
-          AVAudioSession.sharedInstance().requestRecordPermission { resp in
-            let permission: AVAudioSession.RecordPermission = resp ? .granted : .denied
+      return .run { send in
+        let permission = await withCheckedContinuation { cont in
+          AVAudioApplication.requestRecordPermission { resp in
+            let permission: AVAudioApplication.recordPermission = resp ? .granted : .denied
             cont.resume(with: .success(RecordPermission(permission)))
           }
         }
+        send(permission)
       }
     }
   )

@@ -7,12 +7,14 @@ import Combine
 import ComposableArchitecture
 import SwiftUI
 
-struct RegSetupFeature: ReducerProtocol {
+@Reducer
+struct RegSetupFeature {
   @Dependency(\.config) var config
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
   @Dependency(\.date) var date
 
+  @ObservableState
   struct RegState: Equatable {
     var needsConfigLoad = true
 
@@ -26,7 +28,10 @@ struct RegSetupFeature: ReducerProtocol {
     var squareIsReady = false
   }
 
+  @ObservableState
   struct State: Equatable {
+    @Presents var alert: AlertState<Action.Alert>? = nil
+
     private(set) var config: Config = Config.empty
 
     var regState: RegState = .init()
@@ -34,7 +39,10 @@ struct RegSetupFeature: ReducerProtocol {
     var alertState: AlertState<Action>? = nil
     var configState: RegSetupConfigFeature.State = .init()
     var squareSetupState: SquareSetupFeature.State = .init()
-    var paymentState: PaymentFeature.State = .init(webViewURL: Register.fallbackURL)
+    var paymentState: PaymentFeature.State = .init(
+      webViewURL: Register.fallbackURL,
+      themeColor: Register.fallbackThemeColor
+    )
 
     mutating func setMode(_ mode: Mode) {
       regState.isClosed = mode == .close
@@ -46,13 +54,14 @@ struct RegSetupFeature: ReducerProtocol {
       configState.registerRequest = .init(config: config)
       squareSetupState.config = config
       paymentState.webViewURL = config.urlOrFallback
+      paymentState.themeColor = config.parsedColor
     }
 
     mutating func setAlert(title: String, message: String) {
       alertState = AlertState {
         TextState(title)
       } actions: {
-        ButtonState(action: .alertDismissed) {
+        ButtonState(action: .alert(.dismiss)) {
           TextState("OK")
         }
       } message: {
@@ -77,20 +86,20 @@ struct RegSetupFeature: ReducerProtocol {
     case squareTransactionCompleted(Bool)
     case paymentAction(PaymentFeature.Action)
     case setErrorMessage(title: String, message: String)
-    case alertDismissed
-    case ignore
+    case alert(PresentationAction<Alert>)
     case scenePhaseChanged(ScenePhase)
+
+    enum Alert: Equatable {}
   }
 
-  private enum SubID {}
-  private enum SquareID {}
+  private enum CancelID { case sub, square }
 
-  var body: some ReducerProtocol<State, Action> {
-    Scope(state: \.configState, action: /Action.configAction) {
+  var body: some Reducer<State, Action> {
+    Scope(state: \.configState, action: \.configAction) {
       RegSetupConfigFeature()
     }
 
-    Scope(state: \.squareSetupState, action: /Action.squareSetupAction) {
+    Scope(state: \.squareSetupState, action: \.squareSetupAction) {
       SquareSetupFeature()
     }
 
@@ -98,12 +107,12 @@ struct RegSetupFeature: ReducerProtocol {
       switch action {
       case .appeared:
         state.regState.squareIsReady = square.isAuthorized()
-        return .task {
+        return .run { send in
           do {
             let config = try await config.load()
-            return .configLoaded(.success(config ?? Config.empty))
+            await send(.configLoaded(.success(config ?? Config.empty)))
           } catch {
-            return .configLoaded(.failure(error))
+            await send(.configLoaded(.failure(error)))
           }
         }
       case let .configLoaded(.success(config)):
@@ -166,19 +175,19 @@ struct RegSetupFeature: ReducerProtocol {
       case .squareCheckoutAction(.cancelled):
         return .none
       case let .squareCheckoutAction(.finished(.failure(error))):
-        state.paymentState.alert = AlertState(
-          title: TextState("Error"),
-          message: TextState(error.localizedDescription)
-        )
+        state.paymentState.alert = AlertState {
+          TextState("Error")
+        } message: {
+          TextState(error.localizedDescription)
+        }
         return .none
       case let .squareCheckoutAction(.finished(.success(result))):
-        let config = state.config
         let transaction = SquareCompletedTransaction(
           reference: state.paymentState.currentTransactionReference,
           transactionID: result.transactionId ?? "",
           clientTransactionID: result.transactionClientId
         )
-        return .task {
+        return .run { [config = state.config] send in
           let isValidTransaction: Bool
           do {
             isValidTransaction = try await apis.squareTransactionCompleted(config, transaction)
@@ -186,21 +195,18 @@ struct RegSetupFeature: ReducerProtocol {
             Register.logger.error("Checkout failed: \(error, privacy: .public)")
             isValidTransaction = false
           }
-          return .squareTransactionCompleted(isValidTransaction)
+          await send(.squareTransactionCompleted(isValidTransaction))
         }.animation(.easeInOut)
       case .squareTransactionCompleted(true):
         state.paymentState.cart = nil
         state.paymentState.currentTransactionReference = ""
-        state.paymentState.alert = AlertState(
-          title: TextState("Thanks!"),
-          message: TextState("Payment successful.")
-        )
         return .none
       case .squareTransactionCompleted(false):
-        state.paymentState.alert = AlertState(
-          title: TextState("Error"),
-          message: TextState("Payment was not successful.")
-        )
+        state.paymentState.alert = AlertState {
+          TextState("Error")
+        } message: {
+          TextState("Payment was not successful.")
+        }
         return .none
       case .paymentAction(.dismissView):
         state.setMode(.setup)
@@ -210,27 +216,25 @@ struct RegSetupFeature: ReducerProtocol {
       case let .setErrorMessage(title, message):
         state.setAlert(title: title, message: message)
         return .none
-      case .alertDismissed:
-        state.alertState = nil
-        return .none
-      case .ignore:
+      case .alert:
         return .none
       case let .scenePhaseChanged(phase):
         if state.regState.isConnected && phase == .active {
           return connect(&state)
         } else if state.regState.isConnected && phase == .background {
-          return .cancel(id: SubID.self)
+          return .cancel(id: CancelID.sub)
         } else {
           return .none
         }
       }
     }
+    .ifLet(\.$alert, action: \.alert)
     #if DEBUG
       ._printChanges()
     #endif
   }
 
-  private func decodeQRCode(state: inout State, payload: String) -> EffectTask<Action> {
+  private func decodeQRCode(state: inout State, payload: String) -> Effect<Action> {
     guard let data = payload.data(using: .utf8) else {
       state.setAlert(title: "QR Code Error", message: "Not Valid UTF8")
       return .none
@@ -254,7 +258,7 @@ struct RegSetupFeature: ReducerProtocol {
     }
   }
 
-  private func connect(_ state: inout State) -> EffectTask<Action> {
+  private func connect(_ state: inout State) -> Effect<Action> {
     state.regState.isConnected = false
     state.configState.canUpdateConfig = true
 
@@ -263,7 +267,7 @@ struct RegSetupFeature: ReducerProtocol {
         try apis
         .subscribeToEvents(state.config)
         .map(Action.terminalEvent)
-        .cancellable(id: SubID.self, cancelInFlight: true)
+        .cancellable(id: CancelID.sub, cancelInFlight: true)
         .animation(.easeInOut)
     } catch {
       state.setAlert(title: "Error", message: error.localizedDescription)
@@ -271,17 +275,17 @@ struct RegSetupFeature: ReducerProtocol {
     }
   }
 
-  private func disconnect(state: inout State) -> EffectTask<Action> {
+  private func disconnect(state: inout State) -> Effect<Action> {
     state.regState.isConnected = false
     state.configState.canUpdateConfig = true
 
-    return .cancel(id: SubID.self)
+    return .cancel(id: CancelID.sub)
   }
 
   private func handleTerminalEvent(
     _ state: inout State,
     event: TaskResult<TerminalEvent>
-  ) -> EffectTask<Action> {
+  ) -> Effect<Action> {
     state.regState.isConnected = true
     state.regState.lastEvent = date.now
     state.configState.canUpdateConfig = false
@@ -293,7 +297,10 @@ struct RegSetupFeature: ReducerProtocol {
       return .none
     case .success(.open):
       if state.regState.squareIsReady {
-        state.paymentState = .init(webViewURL: state.config.urlOrFallback)
+        state.paymentState = .init(
+          webViewURL: state.config.urlOrFallback,
+          themeColor: state.config.parsedColor
+        )
         state.setMode(.acceptPayments)
       } else {
         state.setAlert(
@@ -306,7 +313,10 @@ struct RegSetupFeature: ReducerProtocol {
       state.setMode(.close)
       return .none
     case .success(.clearCart):
-      state.paymentState = .init(webViewURL: state.config.urlOrFallback)
+      state.paymentState = .init(
+        webViewURL: state.config.urlOrFallback,
+        themeColor: state.config.parsedColor
+      )
       return .none
     case let .success(.updateCart(cart)):
       state.paymentState.cart = cart
@@ -321,17 +331,20 @@ struct RegSetupFeature: ReducerProtocol {
         allowCash: state.config.allowCash ?? false
       )
 
-      do {
-        return try square.checkout(params)
-          .map(RegSetupFeature.Action.squareCheckoutAction)
-          .cancellable(id: SquareID.self)
-      } catch {
-        state.setAlert(
-          title: "Error",
-          message: "Could not create checkout."
-        )
-        return .none
+      return .run { send in
+        do {
+          for await action in try await square.checkout(params) {
+            await send(.squareCheckoutAction(action))
+          }
+        } catch {
+          await send(
+            .setErrorMessage(
+              title: "Error",
+              message: "Could not create checkout"
+            ))
+        }
       }
+      .cancellable(id: CancelID.square)
     case let .failure(error):
       state.setAlert(title: "Event Error", message: error.localizedDescription)
       return .none
@@ -342,98 +355,84 @@ struct RegSetupFeature: ReducerProtocol {
 struct RegSetupView: View {
   @Environment(\.scenePhase) var scenePhase
 
-  let store: StoreOf<RegSetupFeature>
+  @Bindable var store: StoreOf<RegSetupFeature>
 
   var body: some View {
     NavigationStack {
-      WithViewStore(store, observe: \.regState) { viewStore in
-        Form {
-          RegSetupStatusView(
-            isConnected: viewStore.binding(
-              get: \.isConnected,
-              send: RegSetupFeature.Action.ignore
-            ),
-            lastEvent: viewStore.binding(
-              get: \.lastEvent,
-              send: RegSetupFeature.Action.ignore
-            )
-          )
-
-          launch(viewStore)
-
-          Section("Square") {
-            Button {
-              viewStore.send(.setConfiguringSquare(true))
-            } label: {
-              Label("Square Setup", systemImage: "square")
-            }.disabled(!viewStore.isConnected)
-          }
-
-          RegSetupConfigView(
-            store: store.scope(
-              state: \.configState,
-              action: RegSetupFeature.Action.configAction
-            ))
-        }
-        .navigationTitle("Reg Setup")
-        .alert(store.scope(state: \.alertState), dismiss: .alertDismissed)
-        .fullScreenCover(
-          isPresented: viewStore.binding(
-            get: \.isClosed,
-            send: .setMode(.setup)
+      Form {
+        RegSetupStatusView(
+          isConnected: Binding(
+            get: { store.regState.isConnected },
+            set: { _ in }
           ),
-          content: ClosedView.init
-        )
-        .fullScreenCover(
-          isPresented: viewStore.binding(
-            get: \.isAcceptingPayments,
-            send: .setMode(.setup)
-          ),
-          content: {
-            PaymentView(
-              store: store.scope(
-                state: \.paymentState,
-                action: RegSetupFeature.Action.paymentAction
-              ))
-          }
-        )
-        .sheet(
-          isPresented: viewStore.binding(
-            get: \.isConfiguringSquare,
-            send: RegSetupFeature.Action.setConfiguringSquare
+          lastEvent: Binding(
+            get: { store.regState.lastEvent },
+            set: { _ in }
           )
-        ) {
-          SquareSetupView(
-            store: store.scope(
-              state: \.squareSetupState,
-              action: RegSetupFeature.Action.squareSetupAction
-            ))
+        )
+
+        launch
+
+        Section("Square") {
+          Button {
+            store.send(.setConfiguringSquare(true))
+          } label: {
+            Label("Square Setup", systemImage: "square")
+          }.disabled(!store.regState.isConnected)
         }
-        .onAppear {
-          if viewStore.needsConfigLoad {
-            viewStore.send(.appeared)
-          }
+
+        RegSetupConfigView(
+          store: store.scope(state: \.configState, action: \.configAction))
+      }
+      .navigationTitle("Reg Setup")
+      .alert(
+        store: store.scope(state: \.$alert, action: \.alert)
+      )
+      .fullScreenCover(
+        isPresented: Binding(
+          get: { store.regState.isClosed },
+          set: { _ in store.send(.setMode(.setup)) }
+        ),
+        content: { ClosedView(themeColor: store.config.parsedColor) }
+      )
+      .fullScreenCover(
+        isPresented: Binding(
+          get: { store.regState.isAcceptingPayments },
+          set: { _ in store.send(.setMode(.setup)) }
+        ),
+        content: {
+          PaymentView(
+            store: store.scope(state: \.paymentState, action: \.paymentAction))
         }
-        .onChange(of: scenePhase) { newPhase in
-          viewStore.send(.scenePhaseChanged(newPhase))
+      )
+      .sheet(
+        isPresented: $store.regState.isConfiguringSquare.sending(\.setConfiguringSquare)
+      ) {
+        SquareSetupView(
+          store: store.scope(state: \.squareSetupState, action: \.squareSetupAction))
+      }
+      .onAppear {
+        if store.regState.needsConfigLoad {
+          store.send(.appeared)
         }
+      }
+      .onChange(of: scenePhase) { _, newPhase in
+        store.send(.scenePhaseChanged(newPhase))
       }
     }
   }
 
   @ViewBuilder
-  func launch(
-    _ viewStore: ViewStore<RegSetupFeature.RegState, RegSetupFeature.Action>
-  ) -> some View {
+  var launch: some View {
     Section("Launch") {
       Button {
-        viewStore.send(.setMode(.acceptPayments))
+        store.send(.setMode(.acceptPayments))
       } label: {
         Label("Accept Payments", systemImage: "creditcard")
-      }.disabled(!viewStore.squareIsReady || !viewStore.isConnected)
+      }.disabled(!store.regState.squareIsReady || !store.regState.isConnected)
 
       Button {
-        viewStore.send(.setMode(.close))
+        store.send(.setMode(.close))
       } label: {
         Label("Close Terminal", systemImage: "xmark.square")
       }
@@ -444,9 +443,9 @@ struct RegSetupView: View {
 struct ContentView_Previews: PreviewProvider {
   static var previews: some View {
     RegSetupView(
-      store: Store(
-        initialState: .init(),
-        reducer: RegSetupFeature()
-      ))
+      store: Store(initialState: .init()) {
+        RegSetupFeature()
+      }
+    )
   }
 }

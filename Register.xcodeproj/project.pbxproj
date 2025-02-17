@@ -24,7 +24,6 @@
 		E1327EEB29760AA9001DF7D6 /* ConfigClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
-		E1553F81297A240E0081A6EF /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1553F80297A240E0081A6EF /* MQTTNIO */; };
 		E1553F83297A33750081A6EF /* RegSetupConfigViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */; };
 		E1553F85297A37160081A6EF /* RegSetupViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F84297A37160081A6EF /* RegSetupViewTests.swift */; };
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
@@ -33,6 +32,8 @@
 		E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; };
 		E15CFC842978EC6300675A5D /* SquareReaderSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
+		E1C148A52CE7AFAF001B5BBF /* ConfigClient+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */; };
+		E1C148BC2CE7CF21001B5BBF /* NIOFoundationCompat in Frameworks */ = {isa = PBXBuildFile; productRef = E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */; };
 		E1C527B229790838009B2B54 /* SquareClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B129790838009B2B54 /* SquareClient.swift */; };
 		E1C527B42979A046009B2B54 /* SquareSettingsDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */; };
 		E1C527B62979A227009B2B54 /* SquareClient+DependencyKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */; };
@@ -103,6 +104,8 @@
 		E15CFC812978EB0100675A5D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = SquareReaderSDK.xcframework; sourceTree = "<group>"; };
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
+		E1C148A32CE6F9BB001B5BBF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigClient+SwiftUI.swift"; sourceTree = "<group>"; };
 		E1C527B129790838009B2B54 /* SquareClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareClient.swift; sourceTree = "<group>"; };
 		E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSettingsDelegate.swift; sourceTree = "<group>"; };
 		E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SquareClient+DependencyKey.swift"; sourceTree = "<group>"; };
@@ -122,6 +125,7 @@
 				E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */,
 				E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */,
 				E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */,
+				E1C148BC2CE7CF21001B5BBF /* NIOFoundationCompat in Frameworks */,
 				E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -130,7 +134,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1553F81297A240E0081A6EF /* MQTTNIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +172,7 @@
 		E1327EAE29750A7A001DF7D6 /* Register */ = {
 			isa = PBXGroup;
 			children = (
+				E1C148A32CE6F9BB001B5BBF /* Info.plist */,
 				E1327EF329765F74001DF7D6 /* Register.swift */,
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
 				E1ED6308297A00D8005343A9 /* Dependencies */,
@@ -241,6 +245,7 @@
 				E1327EDC29750B7F001DF7D6 /* APISClient.swift */,
 				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
+				E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */,
 				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
@@ -319,6 +324,7 @@
 				E1327EDA29750ACB001DF7D6 /* ComposableArchitecture */,
 				E1327EED29762EE4001DF7D6 /* MQTTNIO */,
 				E1DE8EB12977138B003795C2 /* CodeScanner */,
+				E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */,
 			);
 			productName = Register;
 			productReference = E1327EAC29750A7A001DF7D6 /* Register.app */;
@@ -339,7 +345,6 @@
 			);
 			name = RegisterTests;
 			packageProductDependencies = (
-				E1553F80297A240E0081A6EF /* MQTTNIO */,
 			);
 			productName = RegisterTests;
 			productReference = E1327EBC29750A7B001DF7D6 /* RegisterTests.xctest */;
@@ -399,6 +404,7 @@
 				E1327ED929750ACB001DF7D6 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */,
 				E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */,
+				E1C148A62CE7C556001B5BBF /* XCRemoteSwiftPackageReference "swift-nio" */,
 			);
 			productRefGroup = E1327EAD29750A7A001DF7D6 /* Products */;
 			projectDirPath = "";
@@ -440,6 +446,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		E16EF7C529774BC400E03212 /* Square Reader SDK Setup */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -468,6 +475,7 @@
 				E1327EF429765F74001DF7D6 /* Register.swift in Sources */,
 				E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */,
 				E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */,
+				E1C148A52CE7AFAF001B5BBF /* ConfigClient+SwiftUI.swift in Sources */,
 				E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */,
 				E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */,
 				E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */,
@@ -649,6 +657,7 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Register/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
@@ -659,11 +668,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_SWIFT_FLAGS = "-enable-upcoming-feature InferSendableFromCaptures";
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.Register;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -683,6 +694,7 @@
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Register/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This application integrates with Square for card processing. Square uses Bluetooth to connect your device to compatible hardware.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to automatically import configuration.";
@@ -693,11 +705,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_SWIFT_FLAGS = "-enable-upcoming-feature InferSendableFromCaptures";
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.Register;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -715,7 +729,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -735,7 +749,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -754,6 +768,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -772,6 +787,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5PGRKYR899;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterUITets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -828,8 +844,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.0;
+				kind = exactVersion;
+				version = 1.16.1;
 			};
 		};
 		E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */ = {
@@ -838,6 +854,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
+			};
+		};
+		E1C148A62CE7C556001B5BBF /* XCRemoteSwiftPackageReference "swift-nio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.76.1;
 			};
 		};
 		E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */ = {
@@ -861,10 +885,10 @@
 			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
 			productName = MQTTNIO;
 		};
-		E1553F80297A240E0081A6EF /* MQTTNIO */ = {
+		E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
-			productName = MQTTNIO;
+			package = E1C148A62CE7C556001B5BBF /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOFoundationCompat;
 		};
 		E1DE8EB12977138B003795C2 /* CodeScanner */ = {
 			isa = XCSwiftPackageProductDependency;

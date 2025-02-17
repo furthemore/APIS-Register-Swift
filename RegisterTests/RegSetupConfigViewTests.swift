@@ -14,7 +14,9 @@ final class RegSetupConfigViewTests: XCTestCase {
   private typealias State = Feature.State
 
   func testShowScanner() async throws {
-    let store = TestStore(initialState: State(), reducer: Feature())
+    let store = TestStore(initialState: State()) {
+      Feature()
+    }
 
     await store.send(.showScanner(true)) {
       $0.isPresentingScanner = true
@@ -28,7 +30,9 @@ final class RegSetupConfigViewTests: XCTestCase {
   func testRegisterTerminal() async throws {
     let expectation = XCTestExpectation()
 
-    let store = TestStore(initialState: State(), reducer: Feature()) {
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
       $0.apis.registerTerminal = { _ in .mock }
       $0.config.save = { config in
         expectation.fulfill()
@@ -44,16 +48,15 @@ final class RegSetupConfigViewTests: XCTestCase {
       $0.isLoading = false
     }
 
-    wait(for: [expectation], timeout: 1)
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testClearConfig() async throws {
     let expectation = XCTestExpectation()
 
-    let store = TestStore(
-      initialState: State(canUpdateConfig: false, isPresentingScanner: true),
-      reducer: Feature()
-    ) {
+    let store = TestStore(initialState: State(canUpdateConfig: false, isPresentingScanner: true)) {
+      Feature()
+    } withDependencies: {
       $0.config.clear = { expectation.fulfill() }
     }
 
@@ -61,7 +64,7 @@ final class RegSetupConfigViewTests: XCTestCase {
       $0 = .init()
     }
 
-    wait(for: [expectation], timeout: 1)
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testIsRegistrationDisabled() {

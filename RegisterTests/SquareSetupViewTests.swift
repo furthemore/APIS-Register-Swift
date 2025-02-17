@@ -14,15 +14,18 @@ final class SquareSetupViewTests: XCTestCase {
   private typealias State = Feature.State
 
   func testAppearingChecksPermissions() async throws {
-    let store = TestStore(initialState: State(), reducer: Feature()) {
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
       $0.square.isAuthorized = { true }
       $0.square.authorizedLocation = { .mock }
 
       $0.avAudioSession.recordPermission = { .granted }
 
       $0.locationManager.delegate = {
-        return .task {
-          return LocationAction.didChangeAuthorization(.authorizedAlways)
+        AsyncStream { continutation in
+          continutation.yield(.didChangeAuthorization(.authorizedAlways))
+          continutation.finish()
         }
       }
     }
@@ -41,7 +44,9 @@ final class SquareSetupViewTests: XCTestCase {
   func testRequestingLocation() async throws {
     let expectation = XCTestExpectation()
 
-    let store = TestStore(initialState: State(), reducer: Feature()) {
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
       $0.locationManager.requestWhenInUseAuthorization = {
         expectation.fulfill()
       }
@@ -49,12 +54,14 @@ final class SquareSetupViewTests: XCTestCase {
 
     await store.send(.requestLocation)
 
-    wait(for: [expectation], timeout: 1)
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testRequestingMicrophone() async throws {
-    let store = TestStore(initialState: State(), reducer: Feature()) {
-      $0.avAudioSession.requestRecordPermission = { .task { .granted } }
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
+      $0.avAudioSession.requestRecordPermission = { .run { send in await send(.granted) } }
     }
 
     await store.send(.requestRecordPermission)
@@ -67,7 +74,9 @@ final class SquareSetupViewTests: XCTestCase {
   func testFetchAuthCode() async throws {
     let squareToken = "TEST-SQUARE-TOKEN"
 
-    let store = TestStore(initialState: State(), reducer: Feature()) {
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
       $0.apis.getSquareToken = { _ in squareToken }
       $0.square.authorize = { token in
         XCTAssertEqual(squareToken, token)
@@ -87,12 +96,17 @@ final class SquareSetupViewTests: XCTestCase {
   }
 
   func testOpeningSettings() async throws {
-    let store = TestStore(initialState: State(), reducer: Feature())
+    let store = TestStore(initialState: State()) {
+      Feature()
+    }
 
     await store.send(.setPairingDevice(false))
 
     store.dependencies.square.openSettings = {
-      .task { .presented(.success(true)) }
+      AsyncStream { continuation in
+        continuation.yield(.presented(.success(true)))
+        continuation.finish()
+      }
     }
 
     await store.send(.setPairingDevice(true))
@@ -103,7 +117,9 @@ final class SquareSetupViewTests: XCTestCase {
   func testRemoveAuthorization() async throws {
     let expectation = XCTestExpectation()
 
-    let store = TestStore(initialState: State(), reducer: Feature()) {
+    let store = TestStore(initialState: State()) {
+      Feature()
+    } withDependencies: {
       $0.square.deauthorize = { expectation.fulfill() }
     }
 
@@ -117,6 +133,6 @@ final class SquareSetupViewTests: XCTestCase {
       $0.authorizedLocation = nil
     }
 
-    wait(for: [expectation], timeout: 1)
+    await fulfillment(of: [expectation], timeout: 1)
   }
 }

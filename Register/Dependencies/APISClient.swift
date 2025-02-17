@@ -22,8 +22,7 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
   let firstName: String
   let lastName: String
   let badgeName: String
-  let effectiveLevelName: String
-  let effectiveLevelPrice: Decimal
+  let effectiveLevel: EffectiveLevel
   let discountedPrice: Decimal?
 
   init(
@@ -31,16 +30,14 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
     firstName: String,
     lastName: String,
     badgeName: String,
-    effectiveLevelName: String,
-    effectiveLevelPrice: Decimal,
+    effectiveLevel: EffectiveLevel,
     discountedPrice: Decimal? = nil
   ) {
     self.id = id
     self.firstName = firstName
     self.lastName = lastName
     self.badgeName = badgeName
-    self.effectiveLevelName = effectiveLevelName
-    self.effectiveLevelPrice = effectiveLevelPrice
+    self.effectiveLevel = effectiveLevel
     self.discountedPrice = discountedPrice
   }
 
@@ -50,9 +47,7 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
     self.firstName = try container.decode(String.self, forKey: .firstName)
     self.lastName = try container.decode(String.self, forKey: .lastName)
     self.badgeName = try container.decode(String.self, forKey: .badgeName)
-    self.effectiveLevelName = try container.decode(String.self, forKey: .effectiveLevelName)
-    self.effectiveLevelPrice = Decimal(
-      string: try container.decode(String.self, forKey: .effectiveLevelPrice))!
+    self.effectiveLevel = try container.decode(EffectiveLevel.self, forKey: .effectiveLevel)
     self.discountedPrice = Decimal(
       string: try container.decodeIfPresent(String.self, forKey: .discountedPrice) ?? "")
   }
@@ -62,10 +57,25 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
     firstName: "First",
     lastName: "Last",
     badgeName: "Badge",
-    effectiveLevelName: "Level",
-    effectiveLevelPrice: 30,
+    effectiveLevel: EffectiveLevel(name: "Level", price: 30),
     discountedPrice: nil
   )
+}
+
+struct EffectiveLevel: Equatable, Codable {
+  let name: String
+  let price: Decimal
+  
+  init(name: String, price: Decimal) {
+    self.name = name
+    self.price = price
+  }
+  
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.name = try container.decode(String.self, forKey: .name)
+    self.price = Decimal(string: try container.decode(String.self, forKey: .price))!
+  }
 }
 
 struct TerminalCart: Equatable, Codable {
@@ -74,19 +84,22 @@ struct TerminalCart: Equatable, Codable {
   let organizationDonation: Decimal
   let totalDiscount: Decimal?
   let total: Decimal
+  let paid: Decimal
 
   init(
     badges: IdentifiedArrayOf<TerminalBadge>,
     charityDonation: Decimal,
     organizationDonation: Decimal,
     totalDiscount: Decimal?,
-    total: Decimal
+    total: Decimal,
+    paid: Decimal
   ) {
     self.badges = badges
     self.charityDonation = charityDonation
     self.organizationDonation = organizationDonation
     self.totalDiscount = totalDiscount
     self.total = total
+    self.paid = paid
   }
 
   init(from decoder: Decoder) throws {
@@ -100,6 +113,7 @@ struct TerminalCart: Equatable, Codable {
     self.totalDiscount = Decimal(
       string: try container.decodeIfPresent(String.self, forKey: .totalDiscount) ?? "")
     self.total = Decimal(string: try container.decode(String.self, forKey: .total))!
+    self.paid = Decimal(string: try container.decode(String.self, forKey: .paid))!
   }
 
   static let empty = Self(
@@ -107,7 +121,8 @@ struct TerminalCart: Equatable, Codable {
     charityDonation: 0,
     organizationDonation: 0,
     totalDiscount: nil,
-    total: 0
+    total: 0,
+    paid: 0
   )
 
   static let mock = Self(
@@ -115,14 +130,15 @@ struct TerminalCart: Equatable, Codable {
     charityDonation: 10,
     organizationDonation: 20,
     totalDiscount: nil,
-    total: 60
+    total: 60,
+    paid: 0
   )
 }
 
 struct RegisterRequest: Equatable, Codable {
-  @BindableState var terminalName = ""
-  @BindableState var host = ""
-  @BindableState var token = ""
+  var terminalName = ""
+  var host = ""
+  var token = ""
 
   init(terminalName: String = "", host: String = "", token: String = "") {
     self.terminalName = terminalName
@@ -190,6 +206,7 @@ enum ApisError: LocalizedError {
 
 // MARK: API client interface
 
+@DependencyClient
 struct ApisClient {
   static let logger = Logger(subsystem: Register.bundle, category: "APIS")
 
@@ -197,7 +214,7 @@ struct ApisClient {
   var getSquareToken: (Config) async throws -> String
   var squareTransactionCompleted: (Config, SquareCompletedTransaction) async throws -> Bool
 
-  var subscribeToEvents: (Config) throws -> EffectTask<TaskResult<TerminalEvent>>
+  var subscribeToEvents: (Config) throws -> Effect<TaskResult<TerminalEvent>>
 }
 
 extension ApisClient: TestDependencyKey {
@@ -208,12 +225,7 @@ extension ApisClient: TestDependencyKey {
     subscribeToEvents: { _ in .none }
   )
 
-  static let testValue = Self(
-    registerTerminal: unimplemented("\(Self.self).registerTerminal"),
-    getSquareToken: unimplemented("\(Self.self).getSquareToken"),
-    squareTransactionCompleted: unimplemented("\(Self.self).squareTransactionCompleted"),
-    subscribeToEvents: unimplemented("\(Self.self).subscribeToEvents")
-  )
+  static let testValue = Self()
 }
 
 extension DependencyValues {

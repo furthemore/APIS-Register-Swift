@@ -108,11 +108,12 @@ extension ApisClient: DependencyKey {
         configuration: .init(
           userName: config.mqttUserName,
           password: config.mqttPassword,
+          useSSL: true,
           useWebSockets: true
         )
       )
 
-      return EffectTask<TaskResult<TerminalEvent>>.run { sub in
+      return Effect<TaskResult<TerminalEvent>>.run { sub in
         do {
           try await client.connect()
           Self.logger.debug("Connected to MQTT server")
@@ -126,7 +127,7 @@ extension ApisClient: DependencyKey {
           await withTaskCancellationHandler {
             let listener = client.createPublishListener()
 
-            await sub.send(.success(.connected))
+            sub(.success(.connected))
 
             listenerLoop: for await result in listener {
               let publish: MQTTPublishInfo
@@ -134,7 +135,7 @@ extension ApisClient: DependencyKey {
               case let .success(pub):
                 publish = pub
               case let .failure(error):
-                await sub.send(.failure(error))
+                sub(.failure(error))
                 break listenerLoop
               }
 
@@ -145,9 +146,10 @@ extension ApisClient: DependencyKey {
 
               do {
                 let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
-                await sub.send(.success(event))
+                sub(.success(event))
               } catch {
-                await sub.send(.failure(ApisError.unknownEvent))
+                Self.logger.error("Got unknown event: \(error, privacy: .public)")
+                sub(.failure(ApisError.unknownEvent))
               }
             }
           } onCancel: {
@@ -156,7 +158,7 @@ extension ApisClient: DependencyKey {
         } catch {
           Self.logger.error("Got MQTT error: \(error, privacy: .public)")
           try? client.syncShutdownGracefully()
-          throw error
+          sub(.failure(ApisError.subscriptionError))
         }
       }
     }

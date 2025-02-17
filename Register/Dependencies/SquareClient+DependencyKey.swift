@@ -66,15 +66,15 @@ import ComposableArchitecture
           throw SquareError.missingViewController
         }
 
-        return EffectTask<SquareSettingsAction>.run { sub in
-          let delegate = SquareSettingsDelegate(subscriber: sub)
+        return AsyncStream { continuation in
+          let delegate = SquareSettingsDelegate(continuation)
 
           DispatchQueue.main.async {
             let controller = SQRDReaderSettingsController(delegate: delegate)
             controller.present(from: presentingView)
           }
 
-          return AnyCancellable {
+          continuation.onTermination = { _ in
             _ = delegate
           }
         }
@@ -89,15 +89,15 @@ import ComposableArchitecture
         checkoutParams.note = params.note
         checkoutParams.additionalPaymentTypes = params.allowCash ? [.cash] : []
 
-        return EffectTask<SquareCheckoutAction>.run { sub in
-          let delegate = SquareCheckoutDelegate(sub)
-
+        return AsyncStream { continuation in
+          let delegate = SquareCheckoutDelegate(continuation)
+          
           DispatchQueue.main.async {
             let controller = SQRDCheckoutController(parameters: checkoutParams, delegate: delegate)
             controller.present(from: presentingView)
           }
 
-          return AnyCancellable {
+          continuation.onTermination = { _ in
             _ = delegate
           }
         }
@@ -115,18 +115,21 @@ import ComposableArchitecture
       authorize: { _ in .mock },
       deauthorize: {},
       openSettings: {
-        return .task {
-          return .presented(.success(true))
+        AsyncStream { continuation in
+          continuation.yield(.presented(.success(true)))
         }
       },
       checkout: { params in
-        return .task {
-          return .finished(
-            .success(
-              .init(
-                transactionId: "TEST-TX-ID",
-                transactionClientId: "TEST-CLIENT-TX-ID"
+        AsyncStream { continuation in
+          continuation.yield(
+            .finished(
+              .success(
+                .init(
+                  transactionId: "TEST-TX-ID",
+                  transactionClientId: "TEST-CLIENT-TX-ID"
+                )
               )))
+          continuation.finish()
         }
       }
     )

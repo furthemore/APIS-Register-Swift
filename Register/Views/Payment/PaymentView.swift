@@ -7,76 +7,81 @@ import ComposableArchitecture
 import SwiftUI
 import WebKit
 
-struct PaymentFeature: ReducerProtocol {
+@Reducer
+struct PaymentFeature {
+  @ObservableState
   struct State: Equatable {
+    @Presents var alert: AlertState<Action.Alert>?
+
     var webViewURL: URL
+    var themeColor: Color
+
     var cart: TerminalCart?
     var currentTransactionReference = ""
-
-    var alert: AlertState<Action>? = nil
   }
 
   enum Action: Equatable {
-    case dismissAlert
+    case alert(PresentationAction<Alert>)
     case dismissView
+
+    enum Alert: Equatable {}
   }
 
-  func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
-    switch action {
-    case .dismissAlert:
-      state.alert = nil
-      return .none
-    case .dismissView:
-      return .none
+  var body: some Reducer<State, Action> {
+    Reduce { state, action in
+      switch action {
+      case .alert:
+        return .none
+      case .dismissView:
+        return .none
+      }
     }
+    .ifLet(\.$alert, action: \.alert)
   }
 }
 
 struct PaymentView: View {
   @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
-  let store: StoreOf<PaymentFeature>
+  @Bindable var store: StoreOf<PaymentFeature>
 
   var body: some View {
-    WithViewStore(store) { viewStore in
-      content(viewStore)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Register.themeColor)
-        .statusBarHidden()
-        .preferredColorScheme(.light)
-        .alert(
-          store.scope(state: \.alert),
-          dismiss: PaymentFeature.Action.dismissAlert
-        )
-    }
+    content
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(store.themeColor)
+      .statusBarHidden()
+      .preferredColorScheme(.light)
+      .alert(
+        store: self.store.scope(state: \.$alert, action: \.alert)
+      )
   }
 
   @ViewBuilder
-  func content(_ viewStore: ViewStoreOf<PaymentFeature>) -> some View {
+  var content: some View {
     if horizontalSizeClass == .compact {
-      payment(viewStore)
+      payment
     } else {
       TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        WebView(url: viewStore.webViewURL)
+        WebView(url: store.webViewURL)
           .ignoresSafeArea()
 
-        payment(viewStore)
+        payment
       }
     }
   }
 
   @ViewBuilder
-  func payment(_ viewStore: ViewStoreOf<PaymentFeature>) -> some View {
+  var payment: some View {
     VStack(spacing: 0) {
       CurrentTimeView()
-        .foregroundColor(.white)
         .onTapGesture(count: 5) {
-          viewStore.send(.dismissView)
+          store.send(.dismissView)
         }
+        .foregroundColor(store.themeColor.adaptedTextColor)
         .padding()
         .frame(maxWidth: .infinity)
 
-      if let cart = viewStore.cart {
+      if let cart = store.cart {
         List {
           paymentLineItems(cart)
         }
@@ -103,9 +108,16 @@ struct PaymentView: View {
         PaymentLineBasicView(lineName: "Subtotal", price: cart.total)
         PaymentLineBasicView(lineName: "Discounts", price: -totalDiscount)
       }
+      
+      if cart.paid > 0 {
+        PaymentLineBasicView(lineName: "Paid", price: cart.paid)
+      }
 
-      PaymentLineBasicView(lineName: "Total", price: cart.total - (cart.totalDiscount ?? 0))
-        .bold()
+      PaymentLineBasicView(
+        lineName: "Total",
+        price: cart.total - (cart.totalDiscount ?? 0) - cart.paid
+      )
+      .bold()
     }
   }
 
@@ -118,8 +130,8 @@ struct PaymentView: View {
         PaymentLineBadgeView(
           name: "\(badge.firstName) \(badge.lastName)",
           badgeName: badge.badgeName,
-          levelName: badge.effectiveLevelName,
-          price: badge.effectiveLevelPrice,
+          levelName: badge.effectiveLevel.name,
+          price: badge.effectiveLevel.price,
           discountedPrice: badge.discountedPrice
         )
       }
@@ -144,8 +156,13 @@ struct PaymentView_Previews: PreviewProvider {
   static var previews: some View {
     PaymentView(
       store: Store(
-        initialState: .init(webViewURL: Register.fallbackURL),
-        reducer: PaymentFeature()
-      ))
+        initialState: .init(
+          webViewURL: Register.fallbackURL,
+          themeColor: Register.fallbackThemeColor
+        )
+      ) {
+        PaymentFeature()
+      }
+    )
   }
 }

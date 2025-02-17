@@ -73,18 +73,20 @@ enum SquareError: Equatable, LocalizedError {
 
 // MARK: API client interface
 
+@DependencyClient
 struct SquareClient {
   var initialize: ([UIApplication.LaunchOptionsKey: Any]?) -> Void
 
-  var isAuthorized: () -> Bool
+  var isAuthorized: () -> Bool = { false }
   var authorizedLocation: () -> SquareLocation?
 
   var authorize: (String) async throws -> SquareLocation
   var deauthorize: () async throws -> Void
 
-  var openSettings: () throws -> EffectTask<SquareSettingsAction>
-  var checkout: (SquareCheckoutParams) throws -> EffectTask<SquareCheckoutAction>
+  var openSettings: () async throws -> AsyncStream<SquareSettingsAction>
+  var checkout: (SquareCheckoutParams) async throws -> AsyncStream<SquareCheckoutAction>
 
+  @MainActor
   static var presentingViewController: UIViewController? {
     return UIApplication.shared.connectedScenes.filter {
       $0.activationState == .foregroundActive
@@ -106,19 +108,11 @@ extension SquareClient: TestDependencyKey {
     authorizedLocation: { .mock },
     authorize: { _ in .mock },
     deauthorize: {},
-    openSettings: { .none },
-    checkout: { _ in .none }
+    openSettings: { .never },
+    checkout: { _ in .never }
   )
 
-  static let testValue = Self(
-    initialize: unimplemented("\(Self.self).initialize"),
-    isAuthorized: unimplemented("\(Self.self).isAuthorized"),
-    authorizedLocation: unimplemented("\(Self.self).authorizedLocation"),
-    authorize: unimplemented("\(Self.self).authorize"),
-    deauthorize: unimplemented("\(Self.self).deauthorize"),
-    openSettings: unimplemented("\(Self.self).openSettings"),
-    checkout: unimplemented("\(Self.self).checkout")
-  )
+  static let testValue = Self()
 }
 
 extension DependencyValues {

@@ -5,27 +5,33 @@
 
 #if canImport(SquareReaderSDK)
 
+  import Combine
   import ComposableArchitecture
   import SquareReaderSDK
 
   class SquareSettingsDelegate: SQRDReaderSettingsControllerDelegate {
-    let subscriber: EffectTask<SquareSettingsAction>.Subscriber
+    let continuation: AsyncStream<SquareSettingsAction>.Continuation
 
-    init(subscriber: EffectTask<SquareSettingsAction>.Subscriber) {
-      self.subscriber = subscriber
+    init(_ continuation: AsyncStream<SquareSettingsAction>.Continuation) {
+      self.continuation = continuation
+    }
+    
+    deinit {
+      continuation.finish()
     }
 
     func readerSettingsControllerDidPresent(
       _ readerSettingsController: SQRDReaderSettingsController
     ) {
-      subscriber.send(.presented(.success(true)))
+      continuation.yield(.presented(.success(true)))
     }
 
     func readerSettingsController(
       _ readerSettingsController: SQRDReaderSettingsController,
       didFailToPresentWith error: Error
     ) {
-      subscriber.send(.presented(.failure(error)))
+      continuation.yield(.presented(.failure(error)))
+      continuation.finish()
     }
   }
 

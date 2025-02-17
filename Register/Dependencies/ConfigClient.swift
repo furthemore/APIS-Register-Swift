@@ -3,6 +3,7 @@
 //  Register
 //
 
+import ComposableArchitecture
 import Dependencies
 import Foundation
 import os
@@ -14,6 +15,7 @@ struct Config: Equatable, Codable {
   var key: String
   var webViewURL: URL?
   var allowCash: Bool?
+  var themeColor: String?
 
   var mqttHost: String
   var mqttPort: Int
@@ -32,6 +34,7 @@ struct Config: Equatable, Codable {
     key: "",
     webViewURL: nil,
     allowCash: nil,
+    themeColor: nil,
     mqttHost: "",
     mqttPort: -1,
     mqttUserName: "",
@@ -45,6 +48,7 @@ struct Config: Equatable, Codable {
     token: "MOCK-TOKEN",
     key: "MOCK-KEY",
     webViewURL: URL(string: "http://example.com"),
+    themeColor: nil,
     mqttHost: "http://example.com",
     mqttPort: 443,
     mqttUserName: "MOCK-USERNAME",
@@ -64,6 +68,7 @@ enum ConfigError: LocalizedError {
   }
 }
 
+@DependencyClient
 struct ConfigClient {
   var load: () async throws -> Config?
   var save: (Config) async throws -> Void
@@ -77,11 +82,7 @@ extension ConfigClient: TestDependencyKey {
     clear: {}
   )
 
-  static var testValue = Self(
-    load: unimplemented("\(Self.self).load"),
-    save: unimplemented("\(Self.self).save"),
-    clear: unimplemented("\(Self.self).clear")
-  )
+  static var testValue = Self()
 }
 
 extension ConfigClient: DependencyKey {

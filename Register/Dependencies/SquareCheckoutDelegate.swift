@@ -5,32 +5,40 @@
 
 #if canImport(SquareReaderSDK)
 
+  import Combine
   import ComposableArchitecture
   import SquareReaderSDK
 
   class SquareCheckoutDelegate: NSObject, SQRDCheckoutControllerDelegate {
-    let subscriber: EffectTask<SquareCheckoutAction>.Subscriber
+    let continuation: AsyncStream<SquareCheckoutAction>.Continuation
 
-    init(_ subscriber: EffectTask<SquareCheckoutAction>.Subscriber) {
-      self.subscriber = subscriber
+    init(_ continuation: AsyncStream<SquareCheckoutAction>.Continuation) {
+      self.continuation = continuation
+    }
+    
+    deinit {
+      continuation.finish()
     }
 
     func checkoutControllerDidCancel(_ checkoutController: SQRDCheckoutController) {
-      subscriber.send(.cancelled)
+      continuation.yield(.cancelled)
+      continuation.finish()
     }
 
     func checkoutController(
       _ checkoutController: SQRDCheckoutController,
       didFailWith error: Error
     ) {
-      subscriber.send(.finished(.failure(error)))
+      continuation.yield(.finished(.failure(error)))
+      continuation.finish()
     }
 
     func checkoutController(
       _ checkoutController: SQRDCheckoutController,
       didFinishCheckoutWith result: SQRDCheckoutResult
     ) {
-      subscriber.send(.finished(.success(SquareCheckoutResult(result))))
+      continuation.yield(.finished(.success(SquareCheckoutResult(result))))
+      continuation.finish()
     }
   }
 

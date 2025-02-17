@@ -7,11 +7,17 @@ import CodeScanner
 import ComposableArchitecture
 import SwiftUI
 
-struct RegSetupConfigFeature: ReducerProtocol {
+@Reducer
+struct RegSetupConfigFeature {
   @Dependency(\.config) var config
   @Dependency(\.apis) var apis
 
+  @ObservableState
   struct State: Equatable {
+    var terminalName = ""
+    var host = ""
+    var token = ""
+
     var canUpdateConfig = true
 
     var registerRequest = RegisterRequest()
@@ -37,11 +43,20 @@ struct RegSetupConfigFeature: ReducerProtocol {
     case clear
   }
 
-  var body: some ReducerProtocol<State, Action> {
+  var body: some Reducer<State, Action> {
     BindingReducer()
 
     Reduce { state, action in
       switch action {
+      case .binding(\.terminalName):
+        state.registerRequest.terminalName = state.terminalName
+        return .none
+      case .binding(\.host):
+        state.registerRequest.host = state.host
+        return .none
+      case .binding(\.token):
+        state.registerRequest.token = state.token
+        return .none
       case .binding:
         return .none
       case let .showScanner(shouldShow):
@@ -53,13 +68,13 @@ struct RegSetupConfigFeature: ReducerProtocol {
       case .registerTerminal:
         state.isLoading = true
         let req = state.registerRequest
-        return .task {
+        return .run { send in
           do {
             let fetchedConfig = try await apis.registerTerminal(req)
             try await config.save(fetchedConfig)
-            return .registered(.success(fetchedConfig))
+            await send(.registered(.success(fetchedConfig)))
           } catch {
-            return .registered(.failure(error))
+            await send(.registered(.failure(error)))
           }
         }
       case .registered:
@@ -67,7 +82,7 @@ struct RegSetupConfigFeature: ReducerProtocol {
         return .none
       case .clear:
         state = .init()
-        return .fireAndForget {
+        return .run { _ in
           try? await config.clear()
         }
       }
@@ -76,88 +91,83 @@ struct RegSetupConfigFeature: ReducerProtocol {
 }
 
 struct RegSetupConfigView: View {
-  let store: StoreOf<RegSetupConfigFeature>
+  @Bindable var store: StoreOf<RegSetupConfigFeature>
 
   var body: some View {
-    WithViewStore(store) { viewStore in
-      Section("Terminal Registration") {
-        TextField(
-          text: viewStore.binding(\.registerRequest.$terminalName),
-          prompt: Text("Terminal Name")
-        ) {
-          Text("Terminal Name")
-        }
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
-        .textContentType(.name)
-        .disabled(!viewStore.canUpdateConfig)
-        .foregroundColor(viewStore.fieldColor)
-
-        TextField(
-          text: viewStore.binding(\.registerRequest.$host),
-          prompt: Text("APIS Host")
-        ) {
-          Text("APIS Host")
-        }
-        .keyboardType(.URL)
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
-        .textContentType(.URL)
-        .disabled(!viewStore.canUpdateConfig)
-        .foregroundColor(viewStore.fieldColor)
-
-        SecureField(
-          text: viewStore.binding(\.registerRequest.$token),
-          prompt: Text("APIS Token")
-        ) {
-          Text("APIS Token")
-        }
-        .textContentType(.password)
-        .disabled(!viewStore.canUpdateConfig)
-        .foregroundColor(viewStore.fieldColor)
-
-        Button {
-          viewStore.send(.showScanner(true))
-        } label: {
-          Label("Import QR Code", systemImage: "qrcode.viewfinder")
-        }
-
-        Button {
-          viewStore.send(.registerTerminal)
-        } label: {
-          HStack(spacing: 8) {
-            Label("Register Terminal", systemImage: "terminal")
-              .foregroundColor(viewStore.isLoading ? .secondary : .accentColor)
-
-            if viewStore.isLoading {
-              ProgressView()
-            }
-          }
-        }.disabled(viewStore.isRegistrationDisabled)
-
-        Button(role: .destructive) {
-          viewStore.send(.clear)
-        } label: {
-          Label("Clear Terminal Registration", systemImage: "trash")
-            .foregroundColor(.red)
-        }
-      }
-      .disabled(viewStore.isLoading)
-      .sheet(
-        isPresented: viewStore.binding(
-          get: \.isPresentingScanner,
-          send: RegSetupConfigFeature.Action.showScanner
-        )
+    Section("Terminal Registration") {
+      TextField(
+        text: $store.registerRequest.terminalName,
+        prompt: Text("Terminal Name")
       ) {
-        CodeScannerView(
-          codeTypes: [.qr],
-          simulatedData: Register.simulatedQRCode
-        ) {
-          viewStore.send(
-            .scannerResult(
-              TaskResult($0.map { $0.string })
-            ))
+        Text("Terminal Name")
+      }
+      .textInputAutocapitalization(.never)
+      .autocorrectionDisabled()
+      .textContentType(.name)
+      .disabled(!store.canUpdateConfig)
+      .foregroundColor(store.fieldColor)
+
+      TextField(
+        text: $store.registerRequest.host,
+        prompt: Text("APIS Host")
+      ) {
+        Text("APIS Host")
+      }
+      .keyboardType(.URL)
+      .textInputAutocapitalization(.never)
+      .autocorrectionDisabled()
+      .textContentType(.URL)
+      .disabled(!store.canUpdateConfig)
+      .foregroundColor(store.fieldColor)
+
+      SecureField(
+        text: $store.registerRequest.token,
+        prompt: Text("APIS Token")
+      ) {
+        Text("APIS Token")
+      }
+      .textContentType(.password)
+      .disabled(!store.canUpdateConfig)
+      .foregroundColor(store.fieldColor)
+
+      Button {
+        store.send(.showScanner(true))
+      } label: {
+        Label("Import QR Code", systemImage: "qrcode.viewfinder")
+      }
+
+      Button {
+        store.send(.registerTerminal)
+      } label: {
+        HStack(spacing: 8) {
+          Label("Register Terminal", systemImage: "terminal")
+            .foregroundColor(store.isLoading ? .secondary : .accentColor)
+
+          if store.isLoading {
+            ProgressView()
+          }
         }
+      }.disabled(store.isRegistrationDisabled)
+
+      Button(role: .destructive) {
+        store.send(.clear)
+      } label: {
+        Label("Clear Terminal Registration", systemImage: "trash")
+          .foregroundColor(.red)
+      }
+    }
+    .disabled(store.isLoading)
+    .sheet(
+      isPresented: $store.isPresentingScanner.sending(\.showScanner)
+    ) {
+      CodeScannerView(
+        codeTypes: [.qr],
+        simulatedData: Register.simulatedQRCode
+      ) {
+        store.send(
+          .scannerResult(
+            TaskResult($0.map { $0.string })
+          ))
       }
     }
   }
@@ -167,20 +177,20 @@ struct RegSetupConfigView_Previews: PreviewProvider {
   static var previews: some View {
     Form {
       RegSetupConfigView(
-        store: Store(
-          initialState: .init(),
-          reducer: RegSetupConfigFeature()
-        ))
+        store: Store(initialState: .init()) {
+          RegSetupConfigFeature()
+        }
+      )
     }
     .previewLayout(.fixed(width: 400, height: 400))
     .previewDisplayName("Invalid Config")
 
     Form {
       RegSetupConfigView(
-        store: Store(
-          initialState: .init(isLoading: true),
-          reducer: RegSetupConfigFeature()
-        ))
+        store: Store(initialState: .init(isLoading: true)) {
+          RegSetupConfigFeature()
+        }
+      )
     }
     .previewLayout(.fixed(width: 400, height: 400))
     .previewDisplayName("Loading Config")
@@ -194,9 +204,11 @@ struct RegSetupConfigView_Previews: PreviewProvider {
               host: "http://www.google.com",
               token: "Token"
             )
-          ),
-          reducer: RegSetupConfigFeature()
-        ))
+          )
+        ) {
+          RegSetupConfigFeature()
+        }
+      )
     }
     .previewLayout(.fixed(width: 400, height: 400))
     .previewDisplayName("Good Config")

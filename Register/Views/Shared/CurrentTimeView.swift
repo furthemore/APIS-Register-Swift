@@ -20,9 +20,11 @@ struct CurrentTimeView: View {
   var body: some View {
     Text(currentTime)
       .font(font)
+      .monospacedDigit()
       .textSelection(.disabled)
+      .contentTransition(.numericText())
       .onReceive(timer) { _ in
-        withAnimation(.linear) {
+        withAnimation {
           self.currentTime = Self.dateFormatter.string(from: Date())
         }
       }

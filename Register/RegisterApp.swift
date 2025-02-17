@@ -14,10 +14,10 @@ struct RegisterApp: App {
     WindowGroup {
       if !_XCTIsTesting {
         RegSetupView(
-          store: Store(
-            initialState: .init(),
-            reducer: RegSetupFeature()
-          ))
+          store: Store(initialState: .init()) {
+            RegSetupFeature()
+          }
+        )
       }
     }
   }

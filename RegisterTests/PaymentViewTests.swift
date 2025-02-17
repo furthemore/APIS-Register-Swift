@@ -14,15 +14,17 @@ final class PaymentViewTests: XCTestCase {
   func testDismissAlert() async throws {
     let store = TestStore(
       initialState: PaymentFeature.State(
+        alert: AlertState { TextState("test") },
         webViewURL: Register.fallbackURL,
-        alert: .init(title: TextState("test"))
-      ),
-      reducer: PaymentFeature()
-    )
+        themeColor: Register.fallbackThemeColor
+      )
+    ) {
+      PaymentFeature()
+    }
 
     XCTAssertNotNil(store.state.alert)
 
-    await store.send(.dismissAlert) {
+    await store.send(.alert(.dismiss)) {
       $0.alert = nil
     }
   }

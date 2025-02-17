@@ -8,6 +8,8 @@ import SwiftUI
 struct ClosedView: View {
   @Environment(\.dismiss) var dismiss
 
+  let themeColor: Color
+
   var body: some View {
     VStack {
       Spacer()
@@ -28,8 +30,8 @@ struct ClosedView: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .padding()
-    .foregroundColor(.white)
-    .background(Register.themeColor)
+    .foregroundColor(themeColor.adaptedTextColor)
+    .background(themeColor)
     .statusBar(hidden: true)
   }
 }
@@ -45,6 +47,6 @@ struct FitToWidth: ViewModifier {
 
 struct ClosedView_Previews: PreviewProvider {
   static var previews: some View {
-    ClosedView()
+    ClosedView(themeColor: Register.fallbackThemeColor)
   }
 }

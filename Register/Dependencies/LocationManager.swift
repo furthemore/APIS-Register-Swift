@@ -7,33 +7,21 @@ import Combine
 import ComposableArchitecture
 import CoreLocation
 
+@DependencyClient
 struct LocationManager {
-  var authorizationStatus: () -> CLAuthorizationStatus
+  var authorizationStatus: () -> CLAuthorizationStatus = { .denied }
   var requestWhenInUseAuthorization: () -> Void
-  var delegate: () -> EffectTask<LocationAction>
+  var delegate: () -> AsyncStream<LocationAction> = { .never }
 }
 
 extension LocationManager: DependencyKey {
-  static var liveValue: LocationManager {
-    let manager = CLLocationManager()
-
-    let delegate = EffectTask<LocationAction>.run { sub in
-      let delegate = LocationManagerDelegate(sub)
-      manager.delegate = delegate
-
-      return AnyCancellable {
-        _ = delegate
-      }
-    }
+  @MainActor static var liveValue: LocationManager {
+    let locationManagerClient = LocationManagerClient()
 
     return Self(
-      authorizationStatus: {
-        return manager.authorizationStatus
-      },
-      requestWhenInUseAuthorization: {
-        manager.requestWhenInUseAuthorization()
-      },
-      delegate: { delegate }
+      authorizationStatus: { locationManagerClient.authorizationStatus },
+      requestWhenInUseAuthorization: locationManagerClient.requestWhenInUseAuthorization,
+      delegate: locationManagerClient.delegate
     )
   }
 }
@@ -42,14 +30,10 @@ extension LocationManager: TestDependencyKey {
   static var previewValue = Self(
     authorizationStatus: { .authorizedAlways },
     requestWhenInUseAuthorization: {},
-    delegate: { .none }
+    delegate: { .never }
   )
 
-  static var testValue = Self(
-    authorizationStatus: unimplemented("\(Self.self).authorizationStatus"),
-    requestWhenInUseAuthorization: unimplemented("\(Self.self).requestWhenInUseAuthorization"),
-    delegate: unimplemented("\(Self.self).delegate")
-  )
+  static var testValue = Self()
 }
 
 extension DependencyValues {
@@ -63,14 +47,39 @@ enum LocationAction: Equatable {
   case didChangeAuthorization(CLAuthorizationStatus)
 }
 
-private class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
-  let subscriber: EffectTask<LocationAction>.Subscriber
+@MainActor
+class LocationManagerClient: NSObject {
+  @MainActor let locationManager = CLLocationManager()
+  let passthroughSubject = PassthroughSubject<LocationAction, Never>()
 
-  init(_ subscriber: EffectTask<LocationAction>.Subscriber) {
-    self.subscriber = subscriber
+  @MainActor
+  override init() {
+    super.init()
+    self.locationManager.delegate = self
   }
 
+  var authorizationStatus: CLAuthorizationStatus {
+    locationManager.authorizationStatus
+  }
+
+  func requestWhenInUseAuthorization() {
+    locationManager.requestWhenInUseAuthorization()
+  }
+
+  func delegate() -> AsyncStream<LocationAction> {
+    return AsyncStream { continuation in
+      let subscription = self.passthroughSubject.sink { value in
+        continuation.yield(value)
+      }
+
+      continuation.onTermination = { _ in subscription.cancel() }
+    }
+  }
+}
+
+@MainActor
+extension LocationManagerClient: @preconcurrency CLLocationManagerDelegate {
   func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-    subscriber.send(.didChangeAuthorization(manager.authorizationStatus))
+    passthroughSubject.send(.didChangeAuthorization(manager.authorizationStatus))
   }
 }
