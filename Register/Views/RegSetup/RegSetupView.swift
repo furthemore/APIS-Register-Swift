@@ -339,7 +339,7 @@ struct RegSetupFeature {
       state.paymentState.cart = cart
       state.paymentState.alert = nil
       return .none
-    case let .success(.processPayment(total, note, reference)):
+    case let .success(.processPayment(orderId, total, note, reference)):
       if state.paymentState.showingMockReaderUI {
         state.setAlert(
           title: "Error",
@@ -354,7 +354,13 @@ struct RegSetupFeature {
         idempotencyKey: uuid().uuidString,
         amountMoney: Money(amount: total, currency: .USD)
       )
-      params.note = note
+
+      if let orderId {
+        params.orderID = orderId
+      } else {
+        params.note = note
+      }
+
       params.referenceID = reference
 
       return .run { send in

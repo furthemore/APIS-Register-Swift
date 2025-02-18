@@ -13,7 +13,7 @@ enum TerminalEvent: Equatable, Codable {
   case connected
   case open, close
   case clearCart
-  case processPayment(total: UInt, note: String, reference: String)
+  case processPayment(orderId: String?, total: UInt, note: String, reference: String)
   case updateCart(cart: TerminalCart)
   case updateToken(accessToken: String, refreshToken: String)
 }

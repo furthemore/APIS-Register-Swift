@@ -138,17 +138,26 @@ struct PaymentView: View {
 
     Section {
       if let totalDiscount = cart.totalDiscount, totalDiscount > 0 {
-        PaymentLineBasicView(lineName: "Subtotal", price: cart.total)
-        PaymentLineBasicView(lineName: "Discounts", price: -totalDiscount)
+        PaymentLineBasicView(
+          lineName: "Subtotal",
+          price: cart.total + (cart.totalDiscount ?? 0)
+        )
+        PaymentLineBasicView(
+          lineName: "Discounts",
+          price: -totalDiscount
+        )
       }
 
       if cart.paid > 0 {
-        PaymentLineBasicView(lineName: "Paid", price: cart.paid)
+        PaymentLineBasicView(
+          lineName: "Paid",
+          price: cart.paid
+        )
       }
 
       PaymentLineBasicView(
         lineName: "Total",
-        price: cart.total - (cart.totalDiscount ?? 0) - cart.paid
+        price: cart.total - cart.paid
       )
       .bold()
     }
