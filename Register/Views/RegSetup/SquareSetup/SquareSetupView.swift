@@ -262,7 +262,7 @@ struct SquareSetupView: View {
             }
           }
         }
-        .disabled(store.isAuthorizing)
+        .disabled(store.isAuthorizing || store.config.locationId == nil)
       }
     }
   }

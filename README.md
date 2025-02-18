@@ -170,7 +170,8 @@ Update the authorization token for use with the Mobile Payments SDK.
 ```jsonc
 {
     "updateToken": {
-        "token": ""
+        "accessToken": "",
+        "refreshToken": ""
     }
 }
 ```
