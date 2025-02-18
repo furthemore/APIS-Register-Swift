@@ -16,6 +16,19 @@ struct RegSetupFeature {
   @Dependency(\.date) var date
   @Dependency(\.uuid) var uuid
 
+  enum Mode: Equatable {
+    case acceptPayments, close, setup
+
+    var isPresenting: Bool {
+      switch self {
+      case .acceptPayments, .close:
+        return true
+      default:
+        return false
+      }
+    }
+  }
+
   @ObservableState
   struct RegState: Equatable {
     var needsConfigLoad = true
@@ -23,8 +36,7 @@ struct RegSetupFeature {
     var isConnected = false
     var lastEvent: Date? = nil
 
-    var isAcceptingPayments = false
-    var isClosed = false
+    var mode = Mode.setup
 
     var isConfiguringSquare = false
     var squareIsReady = false
@@ -46,11 +58,6 @@ struct RegSetupFeature {
       themeColor: Register.fallbackThemeColor
     )
 
-    mutating func setMode(_ mode: Mode) {
-      regState.isClosed = mode == .close
-      regState.isAcceptingPayments = mode == .acceptPayments
-    }
-
     mutating func setConfig(_ config: Config) {
       self.config = config
       configState.registerRequest = .init(config: config)
@@ -70,10 +77,6 @@ struct RegSetupFeature {
         TextState(message)
       }
     }
-  }
-
-  enum Mode: Equatable {
-    case acceptPayments, close, setup
   }
 
   enum Action: Equatable {
@@ -138,7 +141,7 @@ struct RegSetupFeature {
       case let .terminalEvent(event):
         return handleTerminalEvent(&state, event: event)
       case let .setMode(mode):
-        state.setMode(mode)
+        state.regState.mode = mode
         return .none
       case let .setConfiguringSquare(configuring):
         state.regState.isConfiguringSquare = configuring
@@ -223,7 +226,7 @@ struct RegSetupFeature {
         }
         return .none
       case .paymentAction(.dismissView):
-        state.setMode(.setup)
+        state.regState.mode = .setup
         return .none
       case .paymentAction:
         return .none
@@ -315,7 +318,7 @@ struct RegSetupFeature {
           webViewURL: state.config.urlOrFallback,
           themeColor: state.config.parsedColor
         )
-        state.setMode(.acceptPayments)
+        state.regState.mode = .acceptPayments
       } else {
         state.setAlert(
           title: "Opening Failed",
@@ -324,7 +327,7 @@ struct RegSetupFeature {
       }
       return .none
     case .success(.close):
-      state.setMode(.close)
+      state.regState.mode = .close
       return .none
     case .success(.clearCart):
       state.paymentState = .init(
@@ -443,22 +446,27 @@ struct RegSetupView: View {
       )
       .fullScreenCover(
         isPresented: Binding(
-          get: { store.regState.isClosed },
-          set: { _ in store.send(.setMode(.setup)) }
-        ),
-        content: { ClosedView(themeColor: store.config.parsedColor) }
-      )
-      .fullScreenCover(
-        isPresented: Binding(
-          get: { store.regState.isAcceptingPayments },
-          set: { _ in store.send(.setMode(.setup)) }
+          get: { store.regState.mode.isPresenting },
+          set: { _ in store.send(.setMode(store.regState.mode)) }
         ),
         content: {
-          PaymentView(
-            store: store.scope(
-              state: \.paymentState,
-              action: \.paymentAction
-            ))
+          switch store.regState.mode {
+          case .acceptPayments:
+            PaymentView(
+              store: store.scope(
+                state: \.paymentState,
+                action: \.paymentAction
+              )
+            )
+            .persistentSystemOverlays(.hidden)
+
+          case .close:
+            ClosedView(themeColor: store.config.parsedColor)
+              .persistentSystemOverlays(.hidden)
+
+          default:
+            Text("Invalid Mode!")
+          }
         }
       )
       .sheet(

@@ -58,18 +58,15 @@ final class RegSetupViewTests: XCTestCase {
     }
 
     await store.send(.setMode(.acceptPayments)) {
-      $0.regState.isClosed = false
-      $0.regState.isAcceptingPayments = true
+      $0.regState.mode = .acceptPayments
     }
 
     await store.send(.setMode(.close)) {
-      $0.regState.isClosed = true
-      $0.regState.isAcceptingPayments = false
+      $0.regState.mode = .close
     }
 
     await store.send(.setMode(.setup)) {
-      $0.regState.isClosed = false
-      $0.regState.isAcceptingPayments = false
+      $0.regState.mode = .setup
     }
   }
 
@@ -307,7 +304,7 @@ final class RegSetupViewTests: XCTestCase {
       $0.configState.canUpdateConfig = false
 
       $0.paymentState.currentTransactionReference = ""
-      $0.setMode(.acceptPayments)
+      $0.regState.mode = .acceptPayments
     }
   }
 
@@ -326,7 +323,7 @@ final class RegSetupViewTests: XCTestCase {
       $0.configState.canUpdateConfig = false
 
       $0.paymentState.currentTransactionReference = ""
-      $0.setMode(.close)
+      $0.regState.mode = .close
     }
   }
 
