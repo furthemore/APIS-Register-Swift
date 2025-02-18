@@ -5,49 +5,49 @@
 
 import Combine
 import ComposableArchitecture
+import SquareMobilePaymentsSDK
 import UIKit
 
 // MARK: API models
 
-struct SquareLocation: Equatable, Identifiable {
+class SquareLocation: NSObject, Identifiable, Location {
   let id: String
   let name: String
-  let businessName: String
-  let isCardProcessingActivated: Bool
+  let mcc: String
+  let currency: Currency
 
-  init(id: String, name: String, businessName: String, isCardProcessingActivated: Bool) {
+  required init(id: String, name: String, mcc: String, currency: Currency) {
     self.id = id
     self.name = name
-    self.businessName = businessName
-    self.isCardProcessingActivated = isCardProcessingActivated
+    self.mcc = mcc
+    self.currency = currency
   }
 
-  static let mock = Self(
+  static let mock = SquareLocation(
     id: "ABC123",
     name: "Test Location",
-    businessName: "Test Business",
-    isCardProcessingActivated: true
+    mcc: "TEST",
+    currency: .USD
   )
 }
 
 struct SquareCheckoutParams: Equatable {
   let amountMoney: Int
   let note: String?
-  let allowCash: Bool
 }
 
 struct SquareCheckoutResult: Equatable {
-  let transactionId: String?
-  let transactionClientId: String
+  let paymentId: String?
+  let referenceId: String?
 
-  init(transactionId: String, transactionClientId: String) {
-    self.transactionId = transactionId
-    self.transactionClientId = transactionClientId
+  init(paymentId: String?, referenceId: String?) {
+    self.paymentId = paymentId
+    self.referenceId = referenceId
   }
 
   static let mock = Self(
-    transactionId: "MOCK-TX-ID",
-    transactionClientId: "MOCK-CLIENT-TX-ID"
+    paymentId: "MOCK-TX-ID",
+    referenceId: "MOCK-CLIENT-TX-ID"
   )
 }
 
@@ -62,11 +62,14 @@ enum SquareCheckoutAction: Equatable {
 
 enum SquareError: Equatable, LocalizedError {
   case missingViewController
+  case noMockReaderUI
 
   var errorDescription: String? {
     switch self {
     case .missingViewController:
       return "Could not find UIViewController needed to present."
+    case .noMockReaderUI:
+      return "No mock reader UI was present."
     }
   }
 }
@@ -80,11 +83,14 @@ struct SquareClient {
   var isAuthorized: () -> Bool = { false }
   var authorizedLocation: () -> SquareLocation?
 
-  var authorize: (String) async throws -> SquareLocation
+  var authorize: (String, String) async throws -> Void
   var deauthorize: () async throws -> Void
 
-  var openSettings: () async throws -> AsyncStream<SquareSettingsAction>
-  var checkout: (SquareCheckoutParams) async throws -> AsyncStream<SquareCheckoutAction>
+  var openSettings: () async throws -> Void
+  var checkout: (PaymentParameters) async throws -> AsyncStream<SquareCheckoutAction>
+
+  var showMockReader: () throws -> Void
+  var hideMockReader: () -> Void
 
   @MainActor
   static var presentingViewController: UIViewController? {
@@ -92,12 +98,11 @@ struct SquareClient {
       $0.activationState == .foregroundActive
     }
     .compactMap { $0 as? UIWindowScene }
-    .first?
-    .windows
+    .flatMap { $0.windows }
     .filter { $0.isKeyWindow }
-    .first?
-    .rootViewController?
-    .presentedViewController
+    .compactMap { $0.rootViewController }
+    .compactMap { $0.presentedViewController }
+    .first
   }
 }
 
@@ -105,11 +110,13 @@ extension SquareClient: TestDependencyKey {
   static let previewValue = Self(
     initialize: { _ in },
     isAuthorized: { true },
-    authorizedLocation: { .mock },
-    authorize: { _ in .mock },
+    authorizedLocation: { SquareLocation.mock },
+    authorize: { _, _ in },
     deauthorize: {},
-    openSettings: { .never },
-    checkout: { _ in .never }
+    openSettings: {},
+    checkout: { _ in .never },
+    showMockReader: {},
+    hideMockReader: {}
   )
 
   static let testValue = Self()

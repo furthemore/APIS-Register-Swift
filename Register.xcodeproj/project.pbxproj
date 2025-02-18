@@ -29,13 +29,14 @@
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
 		E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* LocationDetailView.swift */; };
 		E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7F2978B9C600675A5D /* LocationManager.swift */; };
-		E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; };
-		E15CFC842978EC6300675A5D /* SquareReaderSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
+		E1A2A5882D63B734004243A9 /* MockReaderUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5872D63B734004243A9 /* MockReaderUI */; };
+		E1A2A58A2D63B734004243A9 /* SquareMobilePaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */; };
+		E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2A58C2D640396004243A9 /* BluetoothManager.swift */; };
+		E1A2A5902D640F03004243A9 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A58F2D640F03004243A9 /* AsyncAlgorithms */; };
 		E1C148A52CE7AFAF001B5BBF /* ConfigClient+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */; };
 		E1C148BC2CE7CF21001B5BBF /* NIOFoundationCompat in Frameworks */ = {isa = PBXBuildFile; productRef = E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */; };
 		E1C527B229790838009B2B54 /* SquareClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B129790838009B2B54 /* SquareClient.swift */; };
-		E1C527B42979A046009B2B54 /* SquareSettingsDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */; };
 		E1C527B62979A227009B2B54 /* SquareClient+DependencyKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */; };
 		E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */; };
 		E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */; };
@@ -63,20 +64,6 @@
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		E16EF7C429774BBA00E03212 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				E15CFC842978EC6300675A5D /* SquareReaderSDK.xcframework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		E1327EAC29750A7A001DF7D6 /* Register.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Register.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterApp.swift; sourceTree = "<group>"; };
@@ -102,12 +89,10 @@
 		E15CFC7D2978B97400675A5D /* LocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailView.swift; sourceTree = "<group>"; };
 		E15CFC7F2978B9C600675A5D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		E15CFC812978EB0100675A5D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = SquareReaderSDK.xcframework; sourceTree = "<group>"; };
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
-		E1C148A32CE6F9BB001B5BBF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E1A2A58C2D640396004243A9 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigClient+SwiftUI.swift"; sourceTree = "<group>"; };
 		E1C527B129790838009B2B54 /* SquareClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareClient.swift; sourceTree = "<group>"; };
-		E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSettingsDelegate.swift; sourceTree = "<group>"; };
 		E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SquareClient+DependencyKey.swift"; sourceTree = "<group>"; };
 		E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupStatusView.swift; sourceTree = "<group>"; };
 		E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigView.swift; sourceTree = "<group>"; };
@@ -122,11 +107,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1A2A5882D63B734004243A9 /* MockReaderUI in Frameworks */,
+				E1A2A58A2D63B734004243A9 /* SquareMobilePaymentsSDK in Frameworks */,
 				E1327EDB29750ACB001DF7D6 /* ComposableArchitecture in Frameworks */,
-				E15CFC832978EC6300675A5D /* SquareReaderSDK.xcframework in Frameworks */,
 				E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */,
 				E1C148BC2CE7CF21001B5BBF /* NIOFoundationCompat in Frameworks */,
 				E1DE8EB22977138B003795C2 /* CodeScanner in Frameworks */,
+				E1A2A5902D640F03004243A9 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,7 +159,6 @@
 		E1327EAE29750A7A001DF7D6 /* Register */ = {
 			isa = PBXGroup;
 			children = (
-				E1C148A32CE6F9BB001B5BBF /* Info.plist */,
 				E1327EF329765F74001DF7D6 /* Register.swift */,
 				E1327EAF29750A7A001DF7D6 /* RegisterApp.swift */,
 				E1ED6308297A00D8005343A9 /* Dependencies */,
@@ -234,7 +220,6 @@
 		E16EF7C029774BBA00E03212 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E15CFC822978EC6300675A5D /* SquareReaderSDK.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -246,12 +231,12 @@
 				E1ED63042979E40C005343A9 /* APISClient+DependencyKey.swift */,
 				E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */,
 				E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */,
+				E1A2A58C2D640396004243A9 /* BluetoothManager.swift */,
 				E15CFC7F2978B9C600675A5D /* LocationManager.swift */,
 				E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */,
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
-				E1C527B32979A046009B2B54 /* SquareSettingsDelegate.swift */,
 			);
 			path = Dependencies;
 			sourceTree = "<group>";
@@ -312,8 +297,7 @@
 				E1327EA829750A7A001DF7D6 /* Sources */,
 				E1327EA929750A7A001DF7D6 /* Frameworks */,
 				E1327EAA29750A7A001DF7D6 /* Resources */,
-				E16EF7C429774BBA00E03212 /* Embed Frameworks */,
-				E16EF7C529774BC400E03212 /* Square Reader SDK Setup */,
+				E1A2A58B2D63B751004243A9 /* Run Square Mobile Payments SDK Setup */,
 			);
 			buildRules = (
 			);
@@ -325,6 +309,9 @@
 				E1327EED29762EE4001DF7D6 /* MQTTNIO */,
 				E1DE8EB12977138B003795C2 /* CodeScanner */,
 				E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */,
+				E1A2A5872D63B734004243A9 /* MockReaderUI */,
+				E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */,
+				E1A2A58F2D640F03004243A9 /* AsyncAlgorithms */,
 			);
 			productName = Register;
 			productReference = E1327EAC29750A7A001DF7D6 /* Register.app */;
@@ -405,6 +392,8 @@
 				E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */,
 				E1DE8EB02977138B003795C2 /* XCRemoteSwiftPackageReference "CodeScanner" */,
 				E1C148A62CE7C556001B5BBF /* XCRemoteSwiftPackageReference "swift-nio" */,
+				E1A2A5862D63B734004243A9 /* XCRemoteSwiftPackageReference "mobile-payments-sdk-ios" */,
+				E1A2A58E2D640F03004243A9 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			productRefGroup = E1327EAD29750A7A001DF7D6 /* Products */;
 			projectDirPath = "";
@@ -444,9 +433,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		E16EF7C529774BC400E03212 /* Square Reader SDK Setup */ = {
+		E1A2A58B2D63B751004243A9 /* Run Square Mobile Payments SDK Setup */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -454,14 +442,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Square Reader SDK Setup";
+			name = "Run Square Mobile Payments SDK Setup";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "FRAMEWORKS=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n\"${FRAMEWORKS}/SquareReaderSDK.framework/setup\"\n";
+			shellScript = "FRAMEWORKS=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n\"${FRAMEWORKS}/SquareMobilePaymentsSDK.framework/setup\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -481,13 +469,13 @@
 				E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */,
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */,
+				E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1C527B229790838009B2B54 /* SquareClient.swift in Sources */,
 				E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */,
 				E1C527B62979A227009B2B54 /* SquareClient+DependencyKey.swift in Sources */,
 				E1327EB029750A7A001DF7D6 /* RegisterApp.swift in Sources */,
 				E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */,
-				E1C527B42979A046009B2B54 /* SquareSettingsDelegate.swift in Sources */,
 				E1ED63052979E40C005343A9 /* APISClient+DependencyKey.swift in Sources */,
 				E1DE8EAD29766485003795C2 /* RegSetupStatusView.swift in Sources */,
 				E1327EE329751F0D001DF7D6 /* CurrentTimeView.swift in Sources */,
@@ -856,6 +844,22 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		E1A2A5862D63B734004243A9 /* XCRemoteSwiftPackageReference "mobile-payments-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/square/mobile-payments-sdk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.2;
+			};
+		};
+		E1A2A58E2D640F03004243A9 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.3;
+			};
+		};
 		E1C148A62CE7C556001B5BBF /* XCRemoteSwiftPackageReference "swift-nio" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-nio.git";
@@ -884,6 +888,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */;
 			productName = MQTTNIO;
+		};
+		E1A2A5872D63B734004243A9 /* MockReaderUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1A2A5862D63B734004243A9 /* XCRemoteSwiftPackageReference "mobile-payments-sdk-ios" */;
+			productName = MockReaderUI;
+		};
+		E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1A2A5862D63B734004243A9 /* XCRemoteSwiftPackageReference "mobile-payments-sdk-ios" */;
+			productName = SquareMobilePaymentsSDK;
+		};
+		E1A2A58F2D640F03004243A9 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1A2A58E2D640F03004243A9 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
 		};
 		E1C148BB2CE7CF21001B5BBF /* NIOFoundationCompat */ = {
 			isa = XCSwiftPackageProductDependency;

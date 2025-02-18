@@ -5,6 +5,7 @@
 
 import Combine
 import ComposableArchitecture
+import SquareMobilePaymentsSDK
 import SwiftUI
 
 @Reducer
@@ -13,6 +14,7 @@ struct RegSetupFeature {
   @Dependency(\.apis) var apis
   @Dependency(\.square) var square
   @Dependency(\.date) var date
+  @Dependency(\.uuid) var uuid
 
   @ObservableState
   struct RegState: Equatable {
@@ -103,6 +105,10 @@ struct RegSetupFeature {
       SquareSetupFeature()
     }
 
+    Scope(state: \.paymentState, action: \.paymentAction) {
+      PaymentFeature()
+    }
+
     Reduce { state, action in
       switch action {
       case .appeared:
@@ -164,7 +170,7 @@ struct RegSetupFeature {
         return disconnect(state: &state)
       case .configAction:
         return .none
-      case .squareSetupAction(.fetchedAuthToken):
+      case .squareSetupAction(.authorized):
         state.regState.squareIsReady = true
         return .none
       case .squareSetupAction(.didRemoveAuthorization):
@@ -182,11 +188,20 @@ struct RegSetupFeature {
         }
         return .none
       case let .squareCheckoutAction(.finished(.success(result))):
+        guard let paymentId = result.paymentId else {
+          state.paymentState.alert = AlertState {
+            TextState("Error")
+          } message: {
+            TextState("Finished payment was missing ID.")
+          }
+          return .none
+        }
+
         let transaction = SquareCompletedTransaction(
           reference: state.paymentState.currentTransactionReference,
-          transactionID: result.transactionId ?? "",
-          clientTransactionID: result.transactionClientId
+          paymentId: paymentId
         )
+
         return .run { [config = state.config] send in
           let isValidTransaction: Bool
           do {
@@ -198,7 +213,6 @@ struct RegSetupFeature {
           await send(.squareTransactionCompleted(isValidTransaction))
         }.animation(.easeInOut)
       case .squareTransactionCompleted(true):
-        state.paymentState.cart = nil
         state.paymentState.currentTransactionReference = ""
         return .none
       case .squareTransactionCompleted(false):
@@ -323,13 +337,22 @@ struct RegSetupFeature {
       state.paymentState.alert = nil
       return .none
     case let .success(.processPayment(total, note, reference)):
+      if state.paymentState.showingMockReaderUI {
+        state.setAlert(
+          title: "Error",
+          message: "Can't start payment while mock reader is presented."
+        )
+        return .none
+      }
+
       state.paymentState.currentTransactionReference = reference
 
-      let params = SquareCheckoutParams(
-        amountMoney: total,
-        note: note,
-        allowCash: state.config.allowCash ?? false
+      let params = PaymentParameters(
+        idempotencyKey: uuid().uuidString,
+        amountMoney: Money(amount: total, currency: .USD)
       )
+      params.note = note
+      params.referenceID = reference
 
       return .run { send in
         do {
@@ -340,20 +363,47 @@ struct RegSetupFeature {
           await send(
             .setErrorMessage(
               title: "Error",
-              message: "Could not create checkout"
+              message: "Could not create checkout: \(error.localizedDescription)"
             ))
         }
       }
       .cancellable(id: CancelID.square)
+    case let .success(.updateToken(accessToken, refreshToken)):
+      let updatedConfig = state.config.withSquareTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken
+      )
+      state.setConfig(updatedConfig)
+
+      return .run { send in
+        do {
+          try await config.save(updatedConfig)
+
+          if let locationId = updatedConfig.locationId {
+            try await square.authorize(accessToken, locationId)
+            await send(.squareSetupAction(.authorized))
+          }
+        } catch {
+          await send(
+            .setErrorMessage(
+              title: "Error",
+              message: error.localizedDescription
+            )
+          )
+        }
+      }
     case let .failure(error):
-      state.setAlert(title: "Event Error", message: error.localizedDescription)
+      state.setAlert(
+        title: "Event Error",
+        message: error.localizedDescription
+      )
       return .none
     }
   }
 }
 
 struct RegSetupView: View {
-  @Environment(\.scenePhase) var scenePhase
+  @SwiftUICore.Environment(\.scenePhase) var scenePhase
 
   @Bindable var store: StoreOf<RegSetupFeature>
 
@@ -382,7 +432,10 @@ struct RegSetupView: View {
         }
 
         RegSetupConfigView(
-          store: store.scope(state: \.configState, action: \.configAction))
+          store: store.scope(
+            state: \.configState,
+            action: \.configAction
+          ))
       }
       .navigationTitle("Reg Setup")
       .alert(
@@ -402,14 +455,20 @@ struct RegSetupView: View {
         ),
         content: {
           PaymentView(
-            store: store.scope(state: \.paymentState, action: \.paymentAction))
+            store: store.scope(
+              state: \.paymentState,
+              action: \.paymentAction
+            ))
         }
       )
       .sheet(
         isPresented: $store.regState.isConfiguringSquare.sending(\.setConfiguringSquare)
       ) {
         SquareSetupView(
-          store: store.scope(state: \.squareSetupState, action: \.squareSetupAction))
+          store: store.scope(
+            state: \.squareSetupState,
+            action: \.squareSetupAction
+          ))
       }
       .onAppear {
         if store.regState.needsConfigLoad {

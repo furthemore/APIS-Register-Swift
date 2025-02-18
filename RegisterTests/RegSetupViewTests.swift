@@ -4,6 +4,7 @@
 //
 
 import ComposableArchitecture
+import SquareMobilePaymentsSDK
 import XCTest
 
 @testable import Register
@@ -178,9 +179,11 @@ final class RegSetupViewTests: XCTestCase {
   func testChangingSquareAuthorization() async throws {
     let store = TestStore(initialState: State()) {
       Feature()
+    } withDependencies: {
+      $0.square.authorizedLocation = { .mock }
     }
 
-    await store.send(.squareSetupAction(.fetchedAuthToken(.mock))) {
+    await store.send(.squareSetupAction(.authorized)) {
       $0.regState.squareIsReady = true
       $0.squareSetupState.isAuthorized = true
       $0.squareSetupState.authorizedLocation = .mock
@@ -370,15 +373,15 @@ final class RegSetupViewTests: XCTestCase {
     ) {
       Feature()
     } withDependencies: {
+      $0.date.now = date
+      $0.uuid = UUIDGenerator.incrementing
       $0.square.checkout = { params in
-        XCTAssertEqual(
-          params,
-          SquareCheckoutParams(amountMoney: 6000, note: "note", allowCash: false)
-        )
+        XCTAssertEqual(params.idempotencyKey, "00000000-0000-0000-0000-000000000000")
+        XCTAssertEqual(params.totalMoney as! Money, Money(amount: 6000, currency: .USD))
+        XCTAssertEqual(params.referenceID, "MOCK-REF")
         expectation.fulfill()
         return .finished
       }
-      $0.date.now = date
     }
 
     await store.send(

@@ -13,8 +13,9 @@ enum TerminalEvent: Equatable, Codable {
   case connected
   case open, close
   case clearCart
-  case processPayment(total: Int, note: String, reference: String)
+  case processPayment(total: UInt, note: String, reference: String)
   case updateCart(cart: TerminalCart)
+  case updateToken(accessToken: String, refreshToken: String)
 }
 
 struct TerminalBadge: Identifiable, Equatable, Codable {
@@ -65,12 +66,12 @@ struct TerminalBadge: Identifiable, Equatable, Codable {
 struct EffectiveLevel: Equatable, Codable {
   let name: String
   let price: Decimal
-  
+
   init(name: String, price: Decimal) {
     self.name = name
     self.price = price
   }
-  
+
   init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.name = try container.decode(String.self, forKey: .name)
@@ -174,13 +175,11 @@ struct RegisterRequest: Equatable, Codable {
 
 struct SquareCompletedTransaction: Equatable, Codable {
   let reference: String
-  let transactionID: String
-  let clientTransactionID: String
+  let paymentId: String
 
   static let mock = Self(
     reference: "MOCK-REF",
-    transactionID: SquareCheckoutResult.mock.transactionId ?? "",
-    clientTransactionID: SquareCheckoutResult.mock.transactionClientId
+    paymentId: SquareCheckoutResult.mock.paymentId ?? ""
   )
 }
 
@@ -211,7 +210,7 @@ struct ApisClient {
   static let logger = Logger(subsystem: Register.bundle, category: "APIS")
 
   var registerTerminal: (RegisterRequest) async throws -> Config
-  var getSquareToken: (Config) async throws -> String
+  var requestSquareToken: (Config) async throws -> Void
   var squareTransactionCompleted: (Config, SquareCompletedTransaction) async throws -> Bool
 
   var subscribeToEvents: (Config) throws -> Effect<TaskResult<TerminalEvent>>
@@ -220,7 +219,7 @@ struct ApisClient {
 extension ApisClient: TestDependencyKey {
   static var previewValue = Self(
     registerTerminal: { _ in .mock },
-    getSquareToken: { _ in "MOCK-SQUARE_TOKEN" },
+    requestSquareToken: { _ in },
     squareTransactionCompleted: { _, _ in true },
     subscribeToEvents: { _ in .none }
   )

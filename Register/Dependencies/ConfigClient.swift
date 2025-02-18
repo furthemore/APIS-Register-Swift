@@ -13,8 +13,8 @@ struct Config: Equatable, Codable {
   var host: String
   var token: String
   var key: String
+  var locationId: String?
   var webViewURL: URL?
-  var allowCash: Bool?
   var themeColor: String?
 
   var mqttHost: String
@@ -22,6 +22,9 @@ struct Config: Equatable, Codable {
   var mqttUserName: String
   var mqttPassword: String
   var mqttTopic: String
+
+  var squareAccessToken: String?
+  var squareRefreshToken: String?
 
   var urlOrFallback: URL {
     webViewURL ?? Register.fallbackURL
@@ -32,14 +35,16 @@ struct Config: Equatable, Codable {
     host: "",
     token: "",
     key: "",
+    locationId: nil,
     webViewURL: nil,
-    allowCash: nil,
     themeColor: nil,
     mqttHost: "",
     mqttPort: -1,
     mqttUserName: "",
     mqttPassword: "",
-    mqttTopic: ""
+    mqttTopic: "",
+    squareAccessToken: nil,
+    squareRefreshToken: nil
   )
 
   static let mock = Self(
@@ -47,14 +52,24 @@ struct Config: Equatable, Codable {
     host: "http://example.com",
     token: "MOCK-TOKEN",
     key: "MOCK-KEY",
+    locationId: "MOCK-LOCATION",
     webViewURL: URL(string: "http://example.com"),
     themeColor: nil,
     mqttHost: "http://example.com",
     mqttPort: 443,
     mqttUserName: "MOCK-USERNAME",
     mqttPassword: "MOCK-PASSWORD",
-    mqttTopic: "MOCK-TOPIC"
+    mqttTopic: "MOCK-TOPIC",
+    squareAccessToken: "MOCK-SQUARE-ACCESS",
+    squareRefreshToken: "MOCK-SQUARE-REFRESH"
   )
+
+  func withSquareTokens(accessToken: String, refreshToken: String) -> Self {
+    var config = self
+    config.squareAccessToken = accessToken
+    config.squareRefreshToken = refreshToken
+    return config
+  }
 }
 
 enum ConfigError: LocalizedError {

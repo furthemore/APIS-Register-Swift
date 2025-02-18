@@ -9,6 +9,8 @@ import WebKit
 
 @Reducer
 struct PaymentFeature {
+  @Dependency(\.square) var square
+
   @ObservableState
   struct State: Equatable {
     @Presents var alert: AlertState<Action.Alert>?
@@ -18,11 +20,14 @@ struct PaymentFeature {
 
     var cart: TerminalCart?
     var currentTransactionReference = ""
+
+    var showingMockReaderUI = false
   }
 
   enum Action: Equatable {
     case alert(PresentationAction<Alert>)
     case dismissView
+    case toggleMockReaderUI
 
     enum Alert: Equatable {}
   }
@@ -33,6 +38,27 @@ struct PaymentFeature {
       case .alert:
         return .none
       case .dismissView:
+        square.hideMockReader()
+        state.showingMockReaderUI = false
+        return .none
+      case .toggleMockReaderUI:
+        if state.showingMockReaderUI {
+          square.hideMockReader()
+          state.showingMockReaderUI = false
+        } else {
+          do {
+            try square.showMockReader()
+            state.showingMockReaderUI = true
+          } catch {
+            state.alert = AlertState(
+              title: {
+                TextState("Error")
+              },
+              message: {
+                TextState("\(error.localizedDescription)")
+              })
+          }
+        }
         return .none
       }
     }
@@ -77,6 +103,9 @@ struct PaymentView: View {
         .onTapGesture(count: 5) {
           store.send(.dismissView)
         }
+        .onLongPressGesture(perform: {
+          store.send(.toggleMockReaderUI)
+        })
         .foregroundColor(store.themeColor.adaptedTextColor)
         .padding()
         .frame(maxWidth: .infinity)
@@ -94,11 +123,15 @@ struct PaymentView: View {
 
   @ViewBuilder
   func paymentLineItems(_ cart: TerminalCart) -> some View {
-    Section(header: Text("Badges").foregroundColor(.white)) {
+    Section(
+      header: Text("Badges").foregroundColor(store.themeColor.adaptedTextColor)
+    ) {
       badgeItems(cart)
     }
 
-    Section(header: Text("Donations").foregroundColor(.white)) {
+    Section(
+      header: Text("Donations").foregroundColor(store.themeColor.adaptedTextColor)
+    ) {
       PaymentLineBasicView(lineName: "Charity Donation", price: cart.charityDonation)
       PaymentLineBasicView(lineName: "Organization Donation", price: cart.organizationDonation)
     }
@@ -108,7 +141,7 @@ struct PaymentView: View {
         PaymentLineBasicView(lineName: "Subtotal", price: cart.total)
         PaymentLineBasicView(lineName: "Discounts", price: -totalDiscount)
       }
-      
+
       if cart.paid > 0 {
         PaymentLineBasicView(lineName: "Paid", price: cart.paid)
       }

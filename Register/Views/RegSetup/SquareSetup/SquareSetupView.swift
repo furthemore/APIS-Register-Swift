@@ -4,8 +4,10 @@
 //
 
 import AVFoundation
+import AsyncAlgorithms
 import Combine
 import ComposableArchitecture
+import CoreBluetooth
 import CoreLocation
 import SwiftUI
 
@@ -15,38 +17,41 @@ struct SquareSetupFeature {
   @Dependency(\.square) var square
   @Dependency(\.avAudioSession) var avAudioSession
   @Dependency(\.locationManager) var locationManager
+  @Dependency(\.bluetoothManager) var bluetoothManager
 
   @ObservableState
   struct State: Equatable {
     @Presents var alert: AlertState<Action.Alert>? = nil
     var locationAuthorizationStatus: CLAuthorizationStatus? = nil
     var recordPermission: RecordPermission? = nil
+    var bluetoothAuthorizationStatus: CBManagerAuthorization? = nil
     var isAuthorized = false
     var authorizedLocation: SquareLocation? = nil
-    var isFetchingAuthCode = false
+    var isAuthorizing = false
     var config: Config = .empty
   }
 
   enum Action: Equatable {
     case appeared
     case locationManager(LocationAction)
+    case bluetoothManager(BluetoothAction)
     case requestLocation
+    case requestBluetooth
     case recordPermission(RecordPermission)
     case requestRecordPermission
     case openSettings
-    case setPairingDevice(Bool)
+    case openSquareSettings
     case getAuthorizationCode
-    case fetchedAuthToken(SquareLocation)
+    case authorized
     case removeAuthorization
     case didRemoveAuthorization
     case alert(PresentationAction<Alert>)
     case setErrorMessage(String, String)
-    case squareSettingsAction(SquareSettingsAction)
 
     enum Alert: Equatable {}
   }
 
-  private enum CancelID { case locationManager }
+  private enum CancelID { case authorizationManagers }
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -55,17 +60,26 @@ struct SquareSetupFeature {
         state.recordPermission = avAudioSession.recordPermission()
         state.authorizedLocation = square.authorizedLocation()
         state.isAuthorized = square.isAuthorized()
+        state.bluetoothAuthorizationStatus = bluetoothManager.authorization()
         return .run { @MainActor send in
-          for await action in locationManager.delegate() {
-            send(.locationManager(action))
+          let locationActions = locationManager.delegate().map(Action.locationManager)
+          let bluetoothActions = bluetoothManager.delegate().map(Action.bluetoothManager)
+          for await action in merge(locationActions, bluetoothActions) {
+            send(action)
           }
         }
-        .cancellable(id: CancelID.locationManager, cancelInFlight: true)
+        .cancellable(id: CancelID.authorizationManagers, cancelInFlight: true)
       case let .locationManager(.didChangeAuthorization(status)):
         state.locationAuthorizationStatus = status
         return .none
+      case let .bluetoothManager(.didChangeAuthorization(status)):
+        state.bluetoothAuthorizationStatus = status
+        return .none
       case .requestLocation:
         locationManager.requestWhenInUseAuthorization()
+        return .none
+      case .requestBluetooth:
+        bluetoothManager.requestAuthorization()
         return .none
       case let .recordPermission(permission):
         state.recordPermission = permission
@@ -77,77 +91,73 @@ struct SquareSetupFeature {
           UIApplication.shared.open(url)
         }
         return .none
-      case let .setPairingDevice(pairing):
-        if pairing == true {
-          return .run { send in
-            do {
-              for await action in try await square.openSettings() {
-                await send(.squareSettingsAction(action))
-              }
-            } catch {
-              await send(.setErrorMessage("App Error", error.localizedDescription))
-            }
+      case .openSquareSettings:
+        return .run { send in
+          do {
+            try await square.openSettings()
+          } catch {
+            await send(
+              .setErrorMessage(
+                "App Error",
+                error.localizedDescription
+              ))
           }
         }
-        return .none
       case .getAuthorizationCode:
-        state.isFetchingAuthCode = true
-        return getAuthCode(config: state.config)
-      case let .fetchedAuthToken(location):
-        state.isFetchingAuthCode = false
+        state.isAuthorizing = true
+        return authorize(config: state.config)
+      case .authorized:
+        state.isAuthorizing = false
         state.isAuthorized = true
-        state.authorizedLocation = location
+        state.authorizedLocation = square.authorizedLocation()
         return .none
       case .removeAuthorization:
-        state.isFetchingAuthCode = true
+        state.isAuthorizing = true
         return .run { send in
           do {
             try await square.deauthorize()
             await send(.didRemoveAuthorization)
           } catch {
-            await send(.setErrorMessage("Square Error", error.localizedDescription))
+            await send(
+              .setErrorMessage(
+                "Square Error",
+                error.localizedDescription
+              ))
           }
         }.animation(.easeInOut)
       case .didRemoveAuthorization:
-        state.isFetchingAuthCode = false
+        state.isAuthorizing = false
         state.isAuthorized = false
         state.authorizedLocation = nil
         return .none
       case .alert:
         return .none
       case let .setErrorMessage(title, message):
-        state.isFetchingAuthCode = false
+        state.isAuthorizing = false
         state.alert = AlertState {
           TextState(title)
         } message: {
           TextState(message)
         }
         return .none
-      case .squareSettingsAction:
-        return .none
       }
     }
     .ifLet(\.alert, action: \.alert)
   }
 
-  private func getAuthCode(config: Config) -> Effect<Action> {
+  private func authorize(config: Config) -> Effect<Action> {
     return .run { send in
-      let code: String
       do {
-        code = try await apis.getSquareToken(config)
+        try await apis.requestSquareToken(config)
       } catch {
         return await send(
-          .setErrorMessage("Error Fetching Token", error.localizedDescription)
+          .setErrorMessage(
+            "Error Requesting Token",
+            error.localizedDescription
+          )
         )
       }
-
-      do {
-        let location = try await square.authorize(code)
-        await send(.fetchedAuthToken(location))
-      } catch {
-        await send(.setErrorMessage("Reader SDK Error", error.localizedDescription))
-      }
-    }.animation(.easeInOut)
+    }
   }
 }
 
@@ -160,12 +170,12 @@ struct SquareSetupView: View {
         permissions
         authorization
 
-        Section("Devices") {
+        Section("Square") {
           Button {
-            store.send(.setPairingDevice(true))
+            store.send(.openSquareSettings)
           } label: {
-            Label("Pair Device", systemImage: "arrow.triangle.2.circlepath")
-          }.disabled(!store.isAuthorized)
+            Label("Square Settings", systemImage: "gearshape")
+          }
         }
 
         location
@@ -195,6 +205,19 @@ struct SquareSetupView: View {
         Label("Unknown Location State", systemImage: "wrongwaysign")
       }
 
+      switch store.bluetoothAuthorizationStatus {
+      case .allowedAlways:
+        Label("Bluetooth Authorized", systemImage: "checkmark")
+      case .notDetermined:
+        Button {
+          store.send(.requestBluetooth)
+        } label: {
+          Label("Request Bluetooth", systemImage: "location")
+        }
+      default:
+        Label("Unknown Bluetooth State", systemImage: "wrongwaysign")
+      }
+
       switch store.recordPermission {
       case .granted:
         Label("Microphone Authorized", systemImage: "checkmark")
@@ -220,7 +243,7 @@ struct SquareSetupView: View {
   var authorization: some View {
     Section("Authorization") {
       if store.isAuthorized {
-        Label("Reader Authorized", systemImage: "checkmark")
+        Label("Payments Authorized", systemImage: "checkmark")
           .contextMenu {
             Button(role: .destructive) {
               store.send(.removeAuthorization, animation: .easeInOut)
@@ -232,8 +255,14 @@ struct SquareSetupView: View {
         Button {
           store.send(.getAuthorizationCode, animation: .easeInOut)
         } label: {
-          Label("Get Authorization Code", systemImage: "key.horizontal")
-        }.disabled(store.isFetchingAuthCode)
+          HStack {
+            Label("Request Authorization Code", systemImage: "key.horizontal")
+            if store.isAuthorizing {
+              ProgressView()
+            }
+          }
+        }
+        .disabled(store.isAuthorizing)
       }
     }
   }
@@ -251,12 +280,12 @@ struct SquareSetupView: View {
           value: location.name
         )
         LocationDetailView(
-          name: "Business Name",
-          value: location.businessName
+          name: "Merchant Category Code",
+          value: location.mcc
         )
         LocationDetailView(
-          name: "Card Processing",
-          value: location.isCardProcessingActivated ? "Activated" : "Disabled"
+          name: "Currency",
+          value: location.currency.currencyCode
         )
       } else if store.isAuthorized {
         Label("Unknown Location", systemImage: "exclamationmark.questionmark")
@@ -270,9 +299,14 @@ struct SquareSetupView: View {
 struct SquareSetupView_Previews: PreviewProvider {
   static var previews: some View {
     SquareSetupView(
-      store: Store(initialState: .init()) {
-        SquareSetupFeature()
-      }
+      store: Store(
+        initialState: .init(),
+        reducer: {
+          SquareSetupFeature()
+        },
+        withDependencies: {
+          $0.square.authorizedLocation = { nil }
+        })
     )
     .previewLayout(.fixed(width: 400, height: 400))
     .previewDisplayName("Default Unknown State")

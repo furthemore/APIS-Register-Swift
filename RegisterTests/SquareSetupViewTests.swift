@@ -22,22 +22,34 @@ final class SquareSetupViewTests: XCTestCase {
 
       $0.avAudioSession.recordPermission = { .granted }
 
+      $0.bluetoothManager.delegate = {
+        AsyncStream { continuation in
+          continuation.yield(.didChangeAuthorization(.allowedAlways))
+          continuation.finish()
+        }
+      }
+
       $0.locationManager.delegate = {
-        AsyncStream { continutation in
-          continutation.yield(.didChangeAuthorization(.authorizedAlways))
-          continutation.finish()
+        AsyncStream { continuation in
+          continuation.yield(.didChangeAuthorization(.authorizedAlways))
+          continuation.finish()
         }
       }
     }
 
     await store.send(.appeared) {
       $0.recordPermission = .granted
+      $0.bluetoothAuthorizationStatus = .denied
       $0.authorizedLocation = .mock
       $0.isAuthorized = true
     }
 
     await store.receive(.locationManager(.didChangeAuthorization(.authorizedAlways))) {
       $0.locationAuthorizationStatus = .authorizedAlways
+    }
+
+    await store.receive(.bluetoothManager(.didChangeAuthorization(.allowedAlways))) {
+      $0.bluetoothAuthorizationStatus = .allowedAlways
     }
   }
 
@@ -71,47 +83,17 @@ final class SquareSetupViewTests: XCTestCase {
     }
   }
 
-  func testFetchAuthCode() async throws {
-    let squareToken = "TEST-SQUARE-TOKEN"
-
+  func testRequestSquareToken() async throws {
     let store = TestStore(initialState: State()) {
       Feature()
     } withDependencies: {
-      $0.apis.getSquareToken = { _ in squareToken }
-      $0.square.authorize = { token in
-        XCTAssertEqual(squareToken, token)
-        return .mock
-      }
+      $0.apis.requestSquareToken = { _ in }
+      $0.square.authorize = { _, _ in }
     }
 
     await store.send(.getAuthorizationCode) {
-      $0.isFetchingAuthCode = true
+      $0.isAuthorizing = true
     }
-
-    await store.receive(.fetchedAuthToken(.mock)) {
-      $0.isFetchingAuthCode = false
-      $0.isAuthorized = true
-      $0.authorizedLocation = .mock
-    }
-  }
-
-  func testOpeningSettings() async throws {
-    let store = TestStore(initialState: State()) {
-      Feature()
-    }
-
-    await store.send(.setPairingDevice(false))
-
-    store.dependencies.square.openSettings = {
-      AsyncStream { continuation in
-        continuation.yield(.presented(.success(true)))
-        continuation.finish()
-      }
-    }
-
-    await store.send(.setPairingDevice(true))
-
-    await store.receive(.squareSettingsAction(.presented(.success(true))))
   }
 
   func testRemoveAuthorization() async throws {
@@ -124,11 +106,11 @@ final class SquareSetupViewTests: XCTestCase {
     }
 
     await store.send(.removeAuthorization) {
-      $0.isFetchingAuthCode = true
+      $0.isAuthorizing = true
     }
 
     await store.receive(.didRemoveAuthorization) {
-      $0.isFetchingAuthCode = false
+      $0.isAuthorizing = false
       $0.isAuthorized = false
       $0.authorizedLocation = nil
     }

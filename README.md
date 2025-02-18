@@ -1,29 +1,14 @@
 # Register
 
-A SwiftUI implementation of a payment terminal for [APIS]. Uses MQTT to
-listen for events from the server and the Square Reader SDK to handle payments.
+A SwiftUI implementation of a payment terminal for [APIS]. Uses MQTT to listen
+for events from the server and the Square Mobile Payments SDK to handle
+payments.
 
 [APIS]: https://github.com/furthemore/APIS
 
-## Building
-
-The Square Reader SDK must be downloaded manually. You can do this by running
-the following script in the project root directory:
-
-```bash
-ruby <(curl https://connect.squareup.com/readersdk-installer) install --app-id $APP_ID --repo-password $ACCESS_TOKEN
-```
-
-Xcode should automatically fetch the remaining dependencies and then it's ready
-to build! All other configuration happens at runtime.
-
-For evaluation purposes, it's possible to build the app with a mocked Square
-Reader SDK that always is authenticated and performs successful transactions.
-This can be activated by removing the SquareReaderSDK.xcframework from
-Frameworks, Libraries, and Embedded Content and removing the Square Reader SDK
-Setup build phase.
-
 ## Using
+
+Before deployment, the `squareApplicationId` in Register.swift must be updated.
 
 The app can be manually configured or it can import settings from a QR code. The
 automatic setup data must be formatted as follows:
@@ -32,7 +17,7 @@ automatic setup data must be formatted as follows:
 {
   "terminalName": "", // optional, can be specified in-app
   "host": "https://example.com/registration",
-  "token": "your-registration-token"
+  "token": ""
 }
 ```
 
@@ -47,9 +32,8 @@ data. The body of the request is the following JSON:
 
 ```jsonc
 {
-    "terminalName": "",
-    "host": "",
-    "token": ""
+    "terminalName": "", // name to use for this terminal
+    "token": "" // a secret key used to authorize the terminal
 }
 ```
 
@@ -58,11 +42,10 @@ It expects a response like the following from the server:
 ```jsonc
 {
     "terminalName": "", // may be different, the terminal will use this value
-    "host": "",
-    "token": "",
+    "host": "", // APIS endpoint, ending in /register
+    "token": "", // the same secret key as was provided
     "key": "", // a secret key this terminal uses to authenticate requests
     "webViewURL": "", // website URL to be displayed on the payment screen
-    "allowCash": false, // if the Square Reader SDK should allow cash transactions
     "mqttHost": "",
     "mqttPort": "",
     "mqttUserName": "",
@@ -76,22 +59,22 @@ It connects to the MQTT server via WebSockets.
 ### `POST /terminal/square/token`
 
 This is called when the client requests a new token to authenticate the Square
-Reader SDK. No meaningful data is provided in the request body, the key is
-provided via the `x-terminal-key` header.
+Mobile Payments SDK. No meaningful data is provided in the request body, the key
+is provided as a bearer token in the `Authorization` header.
 
-The server should return a JSON-encoded string with the Square token.
+When the OAuth flow has completed on the server, the `updateToken` MQTT event
+should be emitted.
 
-### `POST /terminal/square/complete`
+### `POST /terminal/square/completed`
 
-This is called when the terminal completes a payment with the Square Reader SDK.
-It is authenticated with the `x-terminal-key` header. The body of this request
-is JSON-encoded like the following:
+This is called when the terminal completes a payment with the Square Mobile
+Payments SDK. It is authenticated with a bearer authorization header. The body of
+this request is JSON-encoded like the following:
 
 ```jsonc
 {
     "reference": "",
-    "clientTransactionId": "",
-    "serverTransactionId": ""
+    "transactionId": ""
 }
 ```
 
@@ -140,7 +123,7 @@ Clears the cart. This is automatically performed when switching modes.
 
 #### Process Payment
 
-Processes the payment by starting the Square Reader SDK.
+Processes the payment by starting the Square Mobile Payments SDK.
 
 ```jsonc
 {
@@ -176,6 +159,18 @@ Updates the payment screen cart.
             "totalDiscount": null,
             "total": "30.00"
         }
+    }
+}
+```
+
+### Update Square Mobile Payments SDK Authorization
+
+Update the authorization token for use with the Mobile Payments SDK.
+
+```jsonc
+{
+    "updateToken": {
+        "token": ""
     }
 }
 ```

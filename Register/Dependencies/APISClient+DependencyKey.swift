@@ -35,7 +35,7 @@ extension ApisClient {
     request.httpBody = httpBody
     request.setValue("application/json", forHTTPHeaderField: "content-type")
     if let key = key {
-      request.setValue(key, forHTTPHeaderField: "x-register-key")
+      request.setValue("Bearer \(key)", forHTTPHeaderField: "authorization")
     }
 
     let (data, response) = try await URLSession.shared.data(for: request)
@@ -64,8 +64,8 @@ extension ApisClient: DependencyKey {
         req: req
       )
     },
-    getSquareToken: { config in
-      return try await Self.makeHttpRequest(
+    requestSquareToken: { config in
+      let _: Bool = try await Self.makeHttpRequest(
         host: config.host,
         endpoint: "/terminal/square/token",
         req: true,
@@ -74,17 +74,13 @@ extension ApisClient: DependencyKey {
     },
     squareTransactionCompleted: { config, transaction in
       struct TransactionData: Encodable {
-        let key: String
         let reference: String
-        let clientTransactionId: String
-        let serverTransactionId: String
+        let paymentId: String
       }
 
       let transactionData = TransactionData(
-        key: config.key,
         reference: transaction.reference,
-        clientTransactionId: transaction.clientTransactionID,
-        serverTransactionId: transaction.transactionID
+        paymentId: transaction.paymentId
       )
 
       struct TransactionResponse: Decodable {
@@ -97,6 +93,7 @@ extension ApisClient: DependencyKey {
         req: transactionData,
         key: config.key
       )
+
       return resp.success
     },
     subscribeToEvents: { config in
