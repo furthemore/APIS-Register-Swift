@@ -427,6 +427,58 @@ final class RegSetupViewTests: XCTestCase {
     await fulfillment(of: [noOrderIdExpectation, someOrderIdExpectation], timeout: 1)
   }
 
+  func testUpdateSquareToken() async throws {
+    let initialConfig = Config.mock
+
+    var expectedConfig = initialConfig
+    expectedConfig.squareAccessToken = "MOCK-ACCESS-TOKEN"
+    expectedConfig.squareRefreshToken = "MOCK-REFRESH-TOKEN"
+
+    let updatedConfigExpectation = XCTestExpectation(description: "Updated config")
+    let squareAuthorizationExpectation = XCTestExpectation(
+      description: "Attempt to authorize Square")
+
+    let date = Date(timeIntervalSince1970: 1000)
+
+    let store = TestStore(
+      initialState: .init(config: initialConfig)
+    ) {
+      Feature()
+    } withDependencies: {
+      $0.date.now = date
+      $0.config.save = { updatedConfig in
+        XCTAssertEqual(updatedConfig, expectedConfig)
+        updatedConfigExpectation.fulfill()
+      }
+      $0.square.authorize = { _, _ in
+        squareAuthorizationExpectation.fulfill()
+      }
+      $0.square.authorizedLocation = { .mock }
+    }
+
+    await store.send(
+      .terminalEvent(
+        .success(
+          .updateToken(
+            accessToken: "MOCK-ACCESS-TOKEN",
+            refreshToken: "MOCK-REFRESH-TOKEN"
+          )))
+    ) {
+      $0.setConfig(expectedConfig)
+      $0.configState.canUpdateConfig = false
+      $0.regState.isConnected = true
+      $0.regState.lastEvent = date
+    }
+
+    await store.receive(.squareSetupAction(.authorized)) {
+      $0.squareSetupState.isAuthorized = true
+      $0.regState.squareIsReady = true
+      $0.squareSetupState.authorizedLocation = .mock
+    }
+
+    await fulfillment(of: [updatedConfigExpectation, squareAuthorizationExpectation], timeout: 1)
+  }
+
   private func standardAlertState(title: String, message: String) -> AlertState<Feature.Action> {
     return AlertState {
       TextState(title)
