@@ -73,7 +73,11 @@ final class SquareSetupViewTests: XCTestCase {
     let store = TestStore(initialState: State()) {
       Feature()
     } withDependencies: {
-      $0.avAudioSession.requestRecordPermission = { .run { send in await send(.granted) } }
+      $0.avAudioSession.requestRecordPermission = {
+        .run { send in
+          await send(.granted)
+        }
+      }
     }
 
     await store.send(.requestRecordPermission)
@@ -84,16 +88,19 @@ final class SquareSetupViewTests: XCTestCase {
   }
 
   func testRequestSquareToken() async throws {
+    let expectation = XCTestExpectation()
+
     let store = TestStore(initialState: State()) {
       Feature()
     } withDependencies: {
-      $0.apis.requestSquareToken = { _ in }
-      $0.square.authorize = { _, _ in }
+      $0.apis.requestSquareToken = { _ in expectation.fulfill() }
     }
 
     await store.send(.getAuthorizationCode) {
       $0.isAuthorizing = true
     }
+
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testRemoveAuthorization() async throws {

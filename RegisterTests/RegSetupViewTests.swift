@@ -356,7 +356,7 @@ final class RegSetupViewTests: XCTestCase {
   }
 
   func testTerminalProcessPayment() async throws {
-    let expectation = XCTestExpectation()
+    let noOrderIdExpectation = XCTestExpectation(description: "Checkout params with no orderID")
     let date = Date(timeIntervalSince1970: 1000)
 
     let store = TestStore(
@@ -373,10 +373,12 @@ final class RegSetupViewTests: XCTestCase {
       $0.date.now = date
       $0.uuid = UUIDGenerator.incrementing
       $0.square.checkout = { params in
+        XCTAssertNil(params.orderID)
         XCTAssertEqual(params.idempotencyKey, "00000000-0000-0000-0000-000000000000")
         XCTAssertEqual(params.totalMoney as! Money, Money(amount: 6000, currency: .USD))
-        XCTAssertEqual(params.referenceID, "MOCK-REF")
-        expectation.fulfill()
+        XCTAssertEqual(params.referenceID, "MOCK-REF1")
+        XCTAssertEqual(params.note, "MOCK-NOTE")
+        noOrderIdExpectation.fulfill()
         return .finished
       }
     }
@@ -385,19 +387,44 @@ final class RegSetupViewTests: XCTestCase {
       .terminalEvent(
         .success(
           .processPayment(
+            orderId: nil,
             total: 6000,
-            note: "note",
-            reference: "MOCK-REF")
+            note: "MOCK-NOTE",
+            reference: "MOCK-REF1")
         ))
     ) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
       $0.configState.canUpdateConfig = false
 
-      $0.paymentState.currentTransactionReference = "MOCK-REF"
+      $0.paymentState.currentTransactionReference = "MOCK-REF1"
     }
 
-    await fulfillment(of: [expectation], timeout: 1)
+    let someOrderIdExpectation = XCTestExpectation(description: "Checkout params with orderID")
+    store.dependencies.square.checkout = { params in
+      XCTAssertEqual(params.orderID, "MOCK-ORDERID")
+      XCTAssertEqual(params.idempotencyKey, "00000000-0000-0000-0000-000000000001")
+      XCTAssertEqual(params.totalMoney as! Money, Money(amount: 6000, currency: .USD))
+      XCTAssertEqual(params.referenceID, "MOCK-REF2")
+      XCTAssertNil(params.note)
+      someOrderIdExpectation.fulfill()
+      return .finished
+    }
+
+    await store.send(
+      .terminalEvent(
+        .success(
+          .processPayment(
+            orderId: "MOCK-ORDERID",
+            total: 6000,
+            note: "MOCK-NOTE",
+            reference: "MOCK-REF2")
+        ))
+    ) {
+      $0.paymentState.currentTransactionReference = "MOCK-REF2"
+    }
+
+    await fulfillment(of: [noOrderIdExpectation, someOrderIdExpectation], timeout: 1)
   }
 
   private func standardAlertState(title: String, message: String) -> AlertState<Feature.Action> {
