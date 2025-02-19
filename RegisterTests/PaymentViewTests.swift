@@ -15,7 +15,7 @@ final class PaymentViewTests: XCTestCase {
     let store = TestStore(
       initialState: PaymentFeature.State(
         alert: AlertState { TextState("test") },
-        webViewURL: Register.fallbackURL,
+        webViewUrl: Register.fallbackURL,
         themeColor: Register.fallbackThemeColor
       )
     ) {

@@ -37,22 +37,45 @@ extension SquareClient: DependencyKey {
     return nil
   }()
 
+  private static var initialized = false
+
   static let liveValue: SquareClient = Self(
     initialize: { launchOptions in
-      MobilePaymentsSDK.initialize(
-        applicationLaunchOptions: launchOptions,
-        squareApplicationID: Register.squareApplicationId
-      )
-    },
-    isAuthorized: { MobilePaymentsSDK.shared.authorizationManager.state == .authorized },
-    authorizedLocation: {
-      if let location = MobilePaymentsSDK.shared.authorizationManager.location {
-        SquareLocation(location)
+      if let squareApplicationId = UserDefaults.standard.string(forKey: "squareApplicationId") {
+        initialized = true
+        MobilePaymentsSDK.initialize(
+          applicationLaunchOptions: launchOptions,
+          squareApplicationID: squareApplicationId
+        )
       } else {
-        nil
+        Self.logger.warning(
+          "No squareApplicationId was found, application must be restarted before using.")
+      }
+    },
+    wasInitialized: { Self.initialized },
+    isAuthorized: {
+      guard Self.initialized else {
+        return false
+      }
+
+      return MobilePaymentsSDK.shared.authorizationManager.state == .authorized
+    },
+    authorizedLocation: {
+      guard Self.initialized else {
+        return nil
+      }
+
+      if let location = MobilePaymentsSDK.shared.authorizationManager.location {
+        return SquareLocation(location)
+      } else {
+        return nil
       }
     },
     authorize: { accessToken, locationId in
+      guard Self.initialized else {
+        throw SquareError.notInitialized
+      }
+
       return try await withCheckedThrowingContinuation { continuation in
         DispatchQueue.main.async {
           MobilePaymentsSDK.shared.authorizationManager.authorize(
@@ -68,6 +91,10 @@ extension SquareClient: DependencyKey {
       }
     },
     deauthorize: {
+      guard Self.initialized else {
+        throw SquareError.notInitialized
+      }
+
       return try await withCheckedThrowingContinuation { continuation in
         DispatchQueue.main.async {
           MobilePaymentsSDK.shared.authorizationManager.deauthorize {
@@ -77,6 +104,10 @@ extension SquareClient: DependencyKey {
       }
     },
     openSettings: {
+      guard Self.initialized else {
+        throw SquareError.notInitialized
+      }
+
       guard let presentingView = SquareClient.presentingViewController else {
         throw SquareError.missingViewController
       }
@@ -94,6 +125,10 @@ extension SquareClient: DependencyKey {
       }
     },
     checkout: { paymentParams in
+      guard Self.initialized else {
+        throw SquareError.notInitialized
+      }
+
       guard let presentingView = SquareClient.presentingViewController else {
         throw SquareError.missingViewController
       }

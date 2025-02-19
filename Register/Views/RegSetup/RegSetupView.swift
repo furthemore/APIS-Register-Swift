@@ -33,6 +33,7 @@ struct RegSetupFeature {
   struct RegState: Equatable {
     var needsConfigLoad = true
 
+    var isConnecting = false
     var isConnected = false
     var lastEvent: Date? = nil
 
@@ -40,61 +41,61 @@ struct RegSetupFeature {
 
     var isConfiguringSquare = false
     var squareIsReady = false
+    var squareWasInitialized = false
   }
 
   @ObservableState
   struct State: Equatable {
     @Presents var alert: AlertState<Action.Alert>? = nil
 
-    private(set) var config: Config = Config.empty
+    var config: Config? = nil
 
     var regState: RegState = .init()
-
-    var alertState: AlertState<Action>? = nil
     var configState: RegSetupConfigFeature.State = .init()
-    var squareSetupState: SquareSetupFeature.State = .init()
-    var paymentState: PaymentFeature.State = .init(
-      webViewURL: Register.fallbackURL,
-      themeColor: Register.fallbackThemeColor
-    )
 
-    mutating func setConfig(_ config: Config) {
-      self.config = config
-      configState.registerRequest = .init(config: config)
-      squareSetupState.config = config
-      paymentState.webViewURL = config.urlOrFallback
-      paymentState.themeColor = config.parsedColor
-    }
+    var squareSetupState: SquareSetupFeature.State? = nil
+    var paymentState: PaymentFeature.State? = nil
 
     mutating func setAlert(title: String, message: String) {
-      alertState = AlertState {
+      alert = AlertState {
         TextState(title)
       } actions: {
-        ButtonState(action: .alert(.dismiss)) {
+        ButtonState(action: .dismiss) {
           TextState("OK")
         }
       } message: {
         TextState(message)
       }
     }
+
+    func readyForPayments(square: SquareClient) -> Bool {
+      return config != nil && regState.squareIsReady && square.wasInitialized()
+    }
   }
 
   enum Action: Equatable {
     case appeared
-    case configLoaded(TaskResult<Config>)
-    case terminalEvent(TaskResult<TerminalEvent>)
+    case scenePhaseChanged(ScenePhase)
+
     case setMode(Mode)
     case setConfiguringSquare(Bool)
+    case setErrorMessage(title: String, message: String)
+
+    case configLoaded(TaskResult<Config>)
+    case connectToggle
+
+    case terminalEvent(TaskResult<TerminalEvent>)
+    case squareTransactionCompleted(Bool)
+
+    case alert(PresentationAction<Alert>)
     case configAction(RegSetupConfigFeature.Action)
     case squareSetupAction(SquareSetupFeature.Action)
     case squareCheckoutAction(SquareCheckoutAction)
-    case squareTransactionCompleted(Bool)
     case paymentAction(PaymentFeature.Action)
-    case setErrorMessage(title: String, message: String)
-    case alert(PresentationAction<Alert>)
-    case scenePhaseChanged(ScenePhase)
 
-    enum Alert: Equatable {}
+    enum Alert: Equatable {
+      case dismiss
+    }
   }
 
   private enum CancelID { case sub, square }
@@ -104,63 +105,97 @@ struct RegSetupFeature {
       RegSetupConfigFeature()
     }
 
-    Scope(state: \.squareSetupState, action: \.squareSetupAction) {
-      SquareSetupFeature()
-    }
-
-    Scope(state: \.paymentState, action: \.paymentAction) {
-      PaymentFeature()
-    }
-
     Reduce { state, action in
       switch action {
       case .appeared:
         state.regState.squareIsReady = square.isAuthorized()
+        state.regState.squareWasInitialized = square.wasInitialized()
         return .run { send in
           do {
-            let config = try await config.load()
-            await send(.configLoaded(.success(config ?? Config.empty)))
+            if let config = try await config.load() {
+              await send(.configLoaded(.success(config)))
+            } else {
+              await send(.configLoaded(.failure(ConfigError.missingConfig)))
+            }
           } catch {
             await send(.configLoaded(.failure(error)))
           }
         }
-      case let .configLoaded(.success(config)):
-        state.setConfig(config)
-        state.regState.needsConfigLoad = false
-        if config != Config.empty {
+      case let .scenePhaseChanged(phase):
+        if state.regState.isConnected && phase == .active {
           return connect(&state)
+        } else if state.regState.isConnected && phase == .background {
+          return .cancel(id: CancelID.sub)
         } else {
           return .none
         }
-      case let .configLoaded(.failure(error)):
-        state.setAlert(
-          title: "Config Load Error",
-          message: error.localizedDescription
-        )
-        return .none
-      case let .terminalEvent(event):
-        return handleTerminalEvent(&state, event: event)
+
       case let .setMode(mode):
         state.regState.mode = mode
         return .none
       case let .setConfiguringSquare(configuring):
-        state.regState.isConfiguringSquare = configuring
+        state.regState.isConfiguringSquare = false
+        state.squareSetupState = nil
+
+        if configuring {
+          guard let config = state.config else {
+            state.setAlert(
+              title: "Error",
+              message: "Must load configuration before configuring Square"
+            )
+            return .none
+          }
+
+          state.regState.isConfiguringSquare = true
+          state.squareSetupState = .init(config: config)
+        }
+
         return .none
-      case .configAction(.registerTerminal):
-        return disconnect(state: &state)
-      case let .configAction(.registered(.success(config))):
-        state.setConfig(config)
-        state.setAlert(
-          title: "Registration Complete",
-          message: "Successfully registered \(config.terminalName)"
-        )
+      case let .setErrorMessage(title, message):
+        state.setAlert(title: title, message: message)
+        return .none
+
+      case let .configLoaded(.success(config)):
+        state.config = config
+        state.regState.needsConfigLoad = false
         return connect(&state)
-      case let .configAction(.registered(.failure(error))):
+      case .configLoaded(.failure(ConfigError.missingConfig)):
+        state.regState.needsConfigLoad = false
+        return .none
+      case let .configLoaded(.failure(error)):
+        state.regState.needsConfigLoad = false
         state.setAlert(
-          title: "Registration Error",
+          title: "Config Load Error",
           message: error.localizedDescription
         )
+        return .run { _ in
+          try await config.clear()
+        }
+      case .connectToggle:
+        if state.regState.isConnected {
+          return disconnect(state: &state)
+        } else {
+          return connect(&state)
+        }
+
+      case let .terminalEvent(event):
+        return handleTerminalEvent(&state, event: event)
+      case .squareTransactionCompleted(true):
         return .none
+      case .squareTransactionCompleted(false):
+        state.paymentState?.alert = AlertState {
+          TextState("Error")
+        } message: {
+          TextState("Payment was not successful.")
+        }
+        return .none
+
+      case .alert(.dismiss):
+        state.alert = nil
+        return .none
+      case .alert:
+        return .none
+
       case let .configAction(.scannerResult(.success(payload))):
         return decodeQRCode(state: &state, payload: payload)
       case let .configAction(.scannerResult(.failure(error))):
@@ -170,42 +205,53 @@ struct RegSetupFeature {
         )
         return .none
       case .configAction(.clear):
-        return disconnect(state: &state)
+        return .concatenate(
+          .run { _ in
+            try await square.deauthorize()
+          },
+          disconnect(state: &state)
+        )
       case .configAction:
         return .none
+
       case .squareSetupAction(.authorized):
-        state.regState.squareIsReady = true
+        state.regState.squareIsReady = square.wasInitialized()
         return .none
       case .squareSetupAction(.didRemoveAuthorization):
         state.regState.squareIsReady = false
         return .none
       case .squareSetupAction:
         return .none
+
       case .squareCheckoutAction(.cancelled):
         return .none
       case let .squareCheckoutAction(.finished(.failure(error))):
-        state.paymentState.alert = AlertState {
+        state.paymentState?.alert = AlertState {
           TextState("Error")
         } message: {
           TextState(error.localizedDescription)
         }
         return .none
       case let .squareCheckoutAction(.finished(.success(result))):
-        guard let paymentId = result.paymentId else {
-          state.paymentState.alert = AlertState {
+        guard let config = state.config, var paymentState = state.paymentState else {
+          return .none
+        }
+
+        guard let paymentId = result.paymentId, let referenceId = result.referenceId else {
+          paymentState.alert = AlertState {
             TextState("Error")
           } message: {
-            TextState("Finished payment was missing ID.")
+            TextState("Finished payment was missing ID or reference.")
           }
           return .none
         }
 
         let transaction = SquareCompletedTransaction(
-          reference: state.paymentState.currentTransactionReference,
+          reference: referenceId,
           paymentId: paymentId
         )
 
-        return .run { [config = state.config] send in
+        return .run { send in
           let isValidTransaction: Bool
           do {
             isValidTransaction = try await apis.squareTransactionCompleted(config, transaction)
@@ -215,37 +261,21 @@ struct RegSetupFeature {
           }
           await send(.squareTransactionCompleted(isValidTransaction))
         }.animation(.easeInOut)
-      case .squareTransactionCompleted(true):
-        state.paymentState.currentTransactionReference = ""
-        return .none
-      case .squareTransactionCompleted(false):
-        state.paymentState.alert = AlertState {
-          TextState("Error")
-        } message: {
-          TextState("Payment was not successful.")
-        }
-        return .none
+
       case .paymentAction(.dismissView):
         state.regState.mode = .setup
         return .none
       case .paymentAction:
         return .none
-      case let .setErrorMessage(title, message):
-        state.setAlert(title: title, message: message)
-        return .none
-      case .alert:
-        return .none
-      case let .scenePhaseChanged(phase):
-        if state.regState.isConnected && phase == .active {
-          return connect(&state)
-        } else if state.regState.isConnected && phase == .background {
-          return .cancel(id: CancelID.sub)
-        } else {
-          return .none
-        }
       }
     }
     .ifLet(\.$alert, action: \.alert)
+    .ifLet(\.squareSetupState, action: \.squareSetupAction) {
+      SquareSetupFeature()
+    }
+    .ifLet(\.paymentState, action: \.paymentAction) {
+      PaymentFeature()
+    }
     #if DEBUG
       ._printChanges()
     #endif
@@ -259,13 +289,23 @@ struct RegSetupFeature {
 
     do {
       let jsonDecoder = JSONDecoder()
-      let registerRequest = try jsonDecoder.decode(RegisterRequest.self, from: data)
-      state.configState.registerRequest = registerRequest
+      let updatedConfig = try jsonDecoder.decode(Config.self, from: data)
+      state.config = updatedConfig
       state.setAlert(
         title: "Imported QR Code",
         message: "Successfully imported data."
       )
-      return disconnect(state: &state)
+      return .run { send in
+        do {
+          try await config.save(updatedConfig)
+        } catch {
+          await send(
+            .setErrorMessage(
+              title: "Config Error",
+              message: error.localizedDescription
+            ))
+        }
+      }
     } catch {
       state.setAlert(
         title: "QR Code Error",
@@ -277,25 +317,30 @@ struct RegSetupFeature {
 
   private func connect(_ state: inout State) -> Effect<Action> {
     state.regState.isConnected = false
-    state.configState.canUpdateConfig = true
+
+    guard let config = state.config else {
+      state.setAlert(title: "Error", message: "Configuration was not set.")
+      return .none
+    }
 
     do {
+      state.regState.isConnecting = true
       return
         try apis
-        .subscribeToEvents(state.config)
+        .subscribeToEvents(config)
         .map(Action.terminalEvent)
         .cancellable(id: CancelID.sub, cancelInFlight: true)
         .animation(.easeInOut)
     } catch {
+      state.regState.isConnecting = false
       state.setAlert(title: "Error", message: error.localizedDescription)
       return .none
     }
   }
 
   private func disconnect(state: inout State) -> Effect<Action> {
+    state.regState.isConnecting = false
     state.regState.isConnected = false
-    state.configState.canUpdateConfig = true
-
     return .cancel(id: CancelID.sub)
   }
 
@@ -303,52 +348,55 @@ struct RegSetupFeature {
     _ state: inout State,
     event: TaskResult<TerminalEvent>
   ) -> Effect<Action> {
+    state.regState.isConnecting = false
     state.regState.isConnected = true
     state.regState.lastEvent = date.now
-    state.configState.canUpdateConfig = false
-
-    state.paymentState.currentTransactionReference = ""
 
     switch event {
     case .success(.connected):
       return .none
     case .success(.open):
-      if state.regState.squareIsReady {
+      if let config = state.config, state.readyForPayments(square: square) {
         state.paymentState = .init(
-          webViewURL: state.config.urlOrFallback,
-          themeColor: state.config.parsedColor
+          webViewUrl: config.webViewUrl,
+          themeColor: config.parsedColor
         )
         state.regState.mode = .acceptPayments
       } else {
         state.setAlert(
           title: "Opening Failed",
-          message: "Square is not yet configured."
+          message: "Terminal has not been fully configured."
         )
       }
       return .none
     case .success(.close):
       state.regState.mode = .close
       return .none
+    case .success(.ready):
+      return .none
     case .success(.clearCart):
-      state.paymentState = .init(
-        webViewURL: state.config.urlOrFallback,
-        themeColor: state.config.parsedColor
-      )
+      state.paymentState?.alert = nil
+      state.paymentState?.cart = nil
       return .none
     case let .success(.updateCart(cart)):
-      state.paymentState.cart = cart
-      state.paymentState.alert = nil
+      state.paymentState?.alert = nil
+      state.paymentState?.cart = cart
       return .none
     case let .success(.processPayment(orderId, total, note, reference)):
-      if state.paymentState.showingMockReaderUI {
+      guard var paymentState = state.paymentState else {
         state.setAlert(
-          title: "Error",
-          message: "Can't start payment while mock reader is presented."
+          title: "No Payment State",
+          message: "Payments have not yet been enabled."
         )
         return .none
       }
 
-      state.paymentState.currentTransactionReference = reference
+      if paymentState.showingMockReaderUI {
+        paymentState.alert = AlertState(title: {
+          TextState("Cannot accept payments while mock reader UI is displayed")
+        })
+        return .none
+      }
 
       let params = PaymentParameters(
         idempotencyKey: uuid().uuidString,
@@ -377,21 +425,20 @@ struct RegSetupFeature {
         }
       }
       .cancellable(id: CancelID.square)
-    case let .success(.updateToken(accessToken, refreshToken)):
-      let updatedConfig = state.config.withSquareTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken
-      )
-      state.setConfig(updatedConfig)
+    case let .success(.updateToken(accessToken)):
+      guard let currentConfig = state.config else {
+        state.setAlert(
+          title: "Error",
+          message: "Must have configuration before authorizing Square"
+        )
+        return .none
+      }
 
       return .run { send in
         do {
-          try await config.save(updatedConfig)
-
-          if let locationId = updatedConfig.locationId {
-            try await square.authorize(accessToken, locationId)
-            await send(.squareSetupAction(.authorized))
-          }
+          try await config.save(currentConfig)
+          try await square.authorize(accessToken, currentConfig.squareLocationId)
+          await send(.squareSetupAction(.authorized))
         } catch {
           await send(
             .setErrorMessage(
@@ -401,12 +448,48 @@ struct RegSetupFeature {
           )
         }
       }
+    case let .success(.updateConfig(updatedConfig)):
+      state.config = updatedConfig
+
+      switch state.regState.mode {
+      case .acceptPayments:
+        state.paymentState?.themeColor = updatedConfig.parsedColor
+      default:
+        break
+      }
+
+      if state.regState.isConfiguringSquare {
+        state.regState.isConfiguringSquare = false
+        state.squareSetupState = nil
+      }
+
+      var events = [
+        disconnect(state: &state),
+        .run { _ in
+          do {
+            try await config.save(updatedConfig)
+          }
+        },
+      ]
+
+      if let existingConfig = state.config,
+        existingConfig.squareApplicationId != updatedConfig.squareApplicationId
+      {
+        state.setAlert(
+          title: "Updated Config",
+          message: "Square Application ID changed, you must relaunch the app."
+        )
+      } else {
+        events.append(connect(&state))
+      }
+
+      return .concatenate(events)
     case let .failure(error):
       state.setAlert(
         title: "Event Error",
         message: error.localizedDescription
       )
-      return .none
+      return disconnect(state: &state)
     }
   }
 }
@@ -420,6 +503,14 @@ struct RegSetupView: View {
     NavigationStack {
       Form {
         RegSetupStatusView(
+          terminalName: Binding(
+            get: { store.config?.terminalName },
+            set: { _ in }
+          ),
+          isConnecting: Binding(
+            get: { store.regState.isConnecting },
+            set: { _ in }
+          ),
           isConnected: Binding(
             get: { store.regState.isConnected },
             set: { _ in }
@@ -427,7 +518,12 @@ struct RegSetupView: View {
           lastEvent: Binding(
             get: { store.regState.lastEvent },
             set: { _ in }
-          )
+          ),
+          canConnect: Binding(
+            get: { store.config != nil },
+            set: { _ in }
+          ),
+          connectToggle: { store.send(.connectToggle) }
         )
 
         launch
@@ -437,37 +533,35 @@ struct RegSetupView: View {
             store.send(.setConfiguringSquare(true))
           } label: {
             Label("Square Setup", systemImage: "square")
-          }.disabled(!store.regState.isConnected)
+          }.disabled(store.config == nil || !store.regState.squareWasInitialized)
         }
 
         RegSetupConfigView(
           store: store.scope(
             state: \.configState,
             action: \.configAction
-          ))
+          )
+        ).disabled(store.regState.needsConfigLoad)
       }
-      .navigationTitle("Reg Setup")
+      .navigationTitle("Terminal Setup")
       .alert(
         store: store.scope(state: \.$alert, action: \.alert)
       )
       .fullScreenCover(
         isPresented: Binding(
           get: { store.regState.mode.isPresenting },
-          set: { _ in store.send(.setMode(store.regState.mode)) }
+          set: { _ in store.send(.setMode(.setup)) }
         ),
         content: {
           switch store.regState.mode {
           case .acceptPayments:
-            PaymentView(
-              store: store.scope(
-                state: \.paymentState,
-                action: \.paymentAction
-              )
-            )
-            .persistentSystemOverlays(.hidden)
+            if let store = store.scope(state: \.paymentState, action: \.paymentAction) {
+              PaymentView(store: store)
+                .persistentSystemOverlays(.hidden)
+            }
 
           case .close:
-            ClosedView(themeColor: store.config.parsedColor)
+            ClosedView(themeColor: store.config?.parsedColor ?? Register.fallbackThemeColor)
               .persistentSystemOverlays(.hidden)
 
           default:
@@ -478,11 +572,9 @@ struct RegSetupView: View {
       .sheet(
         isPresented: $store.regState.isConfiguringSquare.sending(\.setConfiguringSquare)
       ) {
-        SquareSetupView(
-          store: store.scope(
-            state: \.squareSetupState,
-            action: \.squareSetupAction
-          ))
+        if let store = store.scope(state: \.squareSetupState, action: \.squareSetupAction) {
+          SquareSetupView(store: store)
+        }
       }
       .onAppear {
         if store.regState.needsConfigLoad {

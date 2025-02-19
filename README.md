@@ -8,53 +8,28 @@ payments.
 
 ## Using
 
-Before deployment, the `squareApplicationId` in Register.swift must be updated.
-
-The app can be manually configured or it can import settings from a QR code. The
-automatic setup data must be formatted as follows:
+The app must import settings from a QR code. The data must be formatted as follows:
 
 ```jsonc
 {
-  "terminalName": "", // optional, can be specified in-app
-  "host": "https://example.com/registration",
-  "token": ""
+    "terminalName": "",
+    "endpoint": "",
+    "token": "",
+    "webViewUrl": "",
+    "themeColor": "",
+    "mqttHost": "",
+    "mqttPort": "",
+    "mqttUsername": "",
+    "mqttPassword": "",
+    "mqttTopic": "",
+    "squareApplicationId": "",
+    "squareLocationId": ""
 }
 ```
 
 ## Integration
 
 The app depends on the following API endpoints.
-
-### `POST /terminal/register`
-
-This is called when registering the terminal using the provided configuration
-data. The body of the request is the following JSON:
-
-```jsonc
-{
-    "terminalName": "", // name to use for this terminal
-    "token": "" // a secret key used to authorize the terminal
-}
-```
-
-It expects a response like the following from the server:
-
-```jsonc
-{
-    "terminalName": "", // may be different, the terminal will use this value
-    "host": "", // APIS endpoint, ending in /register
-    "token": "", // the same secret key as was provided
-    "key": "", // a secret key this terminal uses to authenticate requests
-    "webViewURL": "", // website URL to be displayed on the payment screen
-    "mqttHost": "",
-    "mqttPort": "",
-    "mqttUserName": "",
-    "mqttPassword": "",
-    "mqttTopic": ""
-}
-```
-
-It connects to the MQTT server via WebSockets.
 
 ### `POST /terminal/square/token`
 
@@ -128,6 +103,7 @@ Processes the payment by starting the Square Mobile Payments SDK.
 ```jsonc
 {
     "processPayment": {
+        "orderId": "", // Square Order ID, if desired
         "total": 100, // total payment expected, in cents
         "note": "", // a note attached to the transaction, displayed to the user
         "reference": "" // an internal reference, included when completing the transaction
@@ -169,9 +145,22 @@ Update the authorization token for use with the Mobile Payments SDK.
 
 ```jsonc
 {
-    "updateToken": {
-        "accessToken": "",
-        "refreshToken": ""
+    "updateSquareToken": {
+        "accessToken": ""
+    }
+}
+```
+
+### Update Terminal Config
+
+Updates the Terminal's configuration.
+
+```jsonc
+{
+    "updateConfig": {
+        "config": {
+            // same configuration as the registration QR code
+        }
     }
 }
 ```

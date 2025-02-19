@@ -10,11 +10,7 @@
 
   extension Config {
     var parsedColor: Color {
-      guard let themeColor else {
-        return Register.fallbackThemeColor
-      }
-
-      return Color(hexString: themeColor) ?? Register.fallbackThemeColor
+      Color(hexString: themeColor) ?? Register.fallbackThemeColor
     }
   }
 

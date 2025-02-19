@@ -15,11 +15,10 @@ struct PaymentFeature {
   struct State: Equatable {
     @Presents var alert: AlertState<Action.Alert>?
 
-    var webViewURL: URL
+    var webViewUrl: URL
     var themeColor: Color
 
     var cart: TerminalCart?
-    var currentTransactionReference = ""
 
     var showingMockReaderUI = false
   }
@@ -88,7 +87,7 @@ struct PaymentView: View {
       payment
     } else {
       TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        WebView(url: store.webViewURL)
+        WebView(url: store.webViewUrl)
           .ignoresSafeArea()
 
         payment
@@ -199,7 +198,7 @@ struct PaymentView_Previews: PreviewProvider {
     PaymentView(
       store: Store(
         initialState: .init(
-          webViewURL: Register.fallbackURL,
+          webViewUrl: Register.fallbackURL,
           themeColor: Register.fallbackThemeColor
         )
       ) {

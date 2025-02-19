@@ -11,11 +11,12 @@ import os
 
 enum TerminalEvent: Equatable, Codable {
   case connected
-  case open, close
+  case open, close, ready
   case clearCart
   case processPayment(orderId: String?, total: UInt, note: String, reference: String)
   case updateCart(cart: TerminalCart)
-  case updateToken(accessToken: String, refreshToken: String)
+  case updateToken(accessToken: String)
+  case updateConfig(config: Config)
 }
 
 struct TerminalBadge: Identifiable, Equatable, Codable {
@@ -136,49 +137,12 @@ struct TerminalCart: Equatable, Codable {
   )
 }
 
-struct RegisterRequest: Equatable, Codable {
-  var terminalName = ""
-  var host = ""
-  var token = ""
-
-  init(terminalName: String = "", host: String = "", token: String = "") {
-    self.terminalName = terminalName
-    self.host = host
-    self.token = token
-  }
-
-  init(config: Config) {
-    self.terminalName = config.terminalName
-    self.host = config.host
-    self.token = config.token
-  }
-
-  private var hostIsValidURL: Bool {
-    guard let url = URL(string: host) else {
-      return false
-    }
-
-    let scheme = url.scheme
-    return scheme == "http" || scheme == "https"
-  }
-
-  var isReady: Bool {
-    return !terminalName.isEmpty && !host.isEmpty && !token.isEmpty && hostIsValidURL
-  }
-
-  static let mock = Self(
-    terminalName: "mock",
-    host: "http://example.com",
-    token: "mock"
-  )
-}
-
 struct SquareCompletedTransaction: Equatable, Codable {
   let reference: String
   let paymentId: String
 
   static let mock = Self(
-    reference: "MOCK-REF",
+    reference: SquareCheckoutResult.mock.referenceId ?? "",
     paymentId: SquareCheckoutResult.mock.paymentId ?? ""
   )
 }
@@ -207,9 +171,8 @@ enum ApisError: LocalizedError {
 
 @DependencyClient
 struct ApisClient {
-  static let logger = Logger(subsystem: Register.bundle, category: "APIS")
+  internal static let logger = Logger(subsystem: Register.bundle, category: "APIS")
 
-  var registerTerminal: (RegisterRequest) async throws -> Config
   var requestSquareToken: (Config) async throws -> Void
   var squareTransactionCompleted: (Config, SquareCompletedTransaction) async throws -> Bool
 
@@ -218,7 +181,6 @@ struct ApisClient {
 
 extension ApisClient: TestDependencyKey {
   static var previewValue = Self(
-    registerTerminal: { _ in .mock },
     requestSquareToken: { _ in },
     squareTransactionCompleted: { _, _ in true },
     subscribeToEvents: { _ in .none }

@@ -15,7 +15,7 @@ final class RegSetupViewTests: XCTestCase {
   private typealias State = Feature.State
 
   func testAppearLoadsConfig() async throws {
-    let store = TestStore(initialState: State()) {
+    let store = TestStore(initialState: State(config: .mock)) {
       Feature()
     } withDependencies: {
       $0.square.isAuthorized = { true }
@@ -29,7 +29,8 @@ final class RegSetupViewTests: XCTestCase {
 
     await store.receive(.configLoaded(.success(.mock))) {
       $0.regState.needsConfigLoad = false
-      $0.setConfig(.mock)
+      $0.regState.isConnecting = true
+      $0.config = .mock
     }
   }
 
@@ -46,9 +47,9 @@ final class RegSetupViewTests: XCTestCase {
       $0.regState.squareIsReady = true
     }
 
-    await store.receive(.configLoaded(.success(.empty))) {
+    await store.receive(.configLoaded(.failure(ConfigError.missingConfig))) {
       $0.regState.needsConfigLoad = false
-      $0.setConfig(.empty)
+      $0.config = nil
     }
   }
 
@@ -70,136 +71,85 @@ final class RegSetupViewTests: XCTestCase {
     }
   }
 
-  func testSetConfig() async throws {
-    var state = State()
-    XCTAssertEqual(state.config, .empty)
-    XCTAssertEqual(state.configState.registerRequest, .init(config: .empty))
-    XCTAssertEqual(state.squareSetupState.config, .empty)
-    XCTAssertEqual(state.paymentState.webViewURL, Register.fallbackURL)
-
-    state.setConfig(.mock)
-    XCTAssertEqual(state.config, .mock)
-    XCTAssertEqual(state.configState.registerRequest, .init(config: .mock))
-    XCTAssertEqual(state.squareSetupState.config, .mock)
-    XCTAssertEqual(state.paymentState.webViewURL, try XCTUnwrap(URL(string: "http://example.com")))
-  }
-
   func testSetAlert() async throws {
     var state = State()
-    XCTAssertNil(state.alertState)
+    XCTAssertNil(state.alert)
 
     state.setAlert(title: "title", message: "message")
-    XCTAssertEqual(state.alertState, standardAlertState(title: "title", message: "message"))
+    XCTAssertEqual(state.alert, standardAlertState(title: "title", message: "message"))
   }
 
-  func testRegisteringTerminal() async throws {
+  func testDecodeQrCode() async throws {
     let expectation = XCTestExpectation()
-    let lastEvent = Date(timeIntervalSince1970: 1000)
 
     let store = TestStore(initialState: State()) {
       Feature()
     } withDependencies: {
-      $0.apis.registerTerminal = { _ in .mock }
       $0.config.save = { _ in expectation.fulfill() }
-      $0.apis.subscribeToEvents = { _ in .run { send in await send(.success(.connected)) } }
-      $0.date.now = lastEvent
-    }
-
-    await store.send(.configAction(.registerTerminal)) {
-      $0.regState.isConnected = false
-      $0.configState.canUpdateConfig = true
-      $0.configState.isLoading = true
-    }
-
-    await store.receive(.configAction(.registered(.success(.mock)))) {
-      $0.setConfig(.mock)
-      $0.setAlert(
-        title: "Registration Complete",
-        message: "Successfully registered \(Config.mock.terminalName)"
-      )
-      $0.regState.isConnected = false
-      $0.configState.isLoading = false
-      $0.configState.canUpdateConfig = true
-    }
-
-    await fulfillment(of: [expectation], timeout: 1)
-
-    await store.receive(.terminalEvent(.success(.connected))) {
-      $0.regState.isConnected = true
-      $0.regState.lastEvent = lastEvent
-      $0.configState.canUpdateConfig = false
-    }
-  }
-
-  func testDecodeQrCode() async throws {
-    let store = TestStore(initialState: State()) {
-      Feature()
     }
 
     await store.send(.configAction(.scannerResult(.success(Register.simulatedQRCode)))) {
-      $0.regState.isConnected = false
-      $0.configState.canUpdateConfig = true
-      $0.alertState = self.standardAlertState(
+      $0.config = .mock
+      $0.alert = self.standardAlertState(
         title: "Imported QR Code",
         message: "Successfully imported data."
       )
-      $0.configState.registerRequest = .init(
-        terminalName: "name",
-        host: "http://localhost:8080",
-        token: "helloworld"
-      )
     }
+
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testClearingDisconnects() async throws {
     let expectation = XCTestExpectation()
+    expectation.expectedFulfillmentCount = 2
 
     let store = TestStore(
       initialState: State(
         regState: .init(isConnected: true),
-        configState: .init(canUpdateConfig: false)
+        configState: .init()
       )
     ) {
       Feature()
     } withDependencies: {
       $0.config.clear = { expectation.fulfill() }
+      $0.square.deauthorize = { expectation.fulfill() }
     }
 
     await store.send(.configAction(.clear)) {
       $0.regState.isConnected = false
-      $0.configState.canUpdateConfig = true
     }
 
     await fulfillment(of: [expectation], timeout: 1)
   }
 
   func testChangingSquareAuthorization() async throws {
-    let store = TestStore(initialState: State()) {
+    let store = TestStore(initialState: State(squareSetupState: .init(config: .mock))) {
       Feature()
     } withDependencies: {
+      $0.square.wasInitialized = { true }
       $0.square.authorizedLocation = { .mock }
     }
 
     await store.send(.squareSetupAction(.authorized)) {
       $0.regState.squareIsReady = true
-      $0.squareSetupState.isAuthorized = true
-      $0.squareSetupState.authorizedLocation = .mock
+      $0.squareSetupState?.hasAuthorizedSquare = true
+      $0.squareSetupState?.squareAuthorizedLocation = .mock
     }
 
     await store.send(.squareSetupAction(.didRemoveAuthorization)) {
       $0.regState.squareIsReady = false
-      $0.squareSetupState.isAuthorized = false
-      $0.squareSetupState.authorizedLocation = nil
+      $0.squareSetupState?.hasAuthorizedSquare = false
+      $0.squareSetupState?.squareAuthorizedLocation = nil
     }
   }
 
   func testSquarePayments() async throws {
     let store = TestStore(
       initialState: State(
+        config: .mock,
         paymentState: .init(
-          webViewURL: Register.fallbackURL,
-          themeColor: Register.fallbackThemeColor,
-          currentTransactionReference: SquareCompletedTransaction.mock.reference)
+          webViewUrl: Register.fallbackURL,
+          themeColor: Register.fallbackThemeColor)
       )
     ) {
       Feature()
@@ -213,7 +163,7 @@ final class RegSetupViewTests: XCTestCase {
     await store.send(.squareCheckoutAction(.finished(.success(.mock))))
 
     await store.receive(.squareTransactionCompleted(false)) {
-      $0.paymentState.alert = AlertState {
+      $0.paymentState?.alert = AlertState {
         TextState("Error")
       } message: {
         TextState("Payment was not successful.")
@@ -227,10 +177,7 @@ final class RegSetupViewTests: XCTestCase {
 
     await store.send(.squareCheckoutAction(.finished(.success(.mock))))
 
-    await store.receive(.squareTransactionCompleted(true)) {
-      $0.paymentState.cart = nil
-      $0.paymentState.currentTransactionReference = ""
-    }
+    await store.receive(.squareTransactionCompleted(true))
   }
 
   func testEventConnections() async throws {
@@ -242,6 +189,7 @@ final class RegSetupViewTests: XCTestCase {
 
     let connectedStore = TestStore(
       initialState: State(
+        config: .mock,
         regState: .init(isConnected: true)
       )
     ) {
@@ -254,7 +202,7 @@ final class RegSetupViewTests: XCTestCase {
 
     await connectedStore.send(.scenePhaseChanged(.active)) {
       $0.regState.isConnected = false
-      $0.configState.canUpdateConfig = true
+      $0.regState.isConnecting = true
     }
   }
 
@@ -264,9 +212,8 @@ final class RegSetupViewTests: XCTestCase {
     let storeNoSquare = TestStore(
       initialState: State(
         paymentState: .init(
-          webViewURL: Register.fallbackURL,
-          themeColor: Register.fallbackThemeColor,
-          currentTransactionReference: "MOCK-REF"
+          webViewUrl: Register.fallbackURL,
+          themeColor: Register.fallbackThemeColor
         ))
     ) {
       Feature()
@@ -277,33 +224,29 @@ final class RegSetupViewTests: XCTestCase {
     await storeNoSquare.send(.terminalEvent(.success(.open))) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
-      $0.configState.canUpdateConfig = false
 
-      $0.paymentState.currentTransactionReference = ""
-
-      $0.setAlert(title: "Opening Failed", message: "Square is not yet configured.")
+      $0.setAlert(title: "Opening Failed", message: "Terminal has not been fully configured.")
     }
 
     let storeWithSquare = TestStore(
       initialState: State(
+        config: .mock,
         regState: .init(squareIsReady: true),
         paymentState: .init(
-          webViewURL: Register.fallbackURL,
-          themeColor: Register.fallbackThemeColor,
-          currentTransactionReference: "MOCK-REF"
+          webViewUrl: Config.mock.webViewUrl,
+          themeColor: Config.mock.parsedColor
         ))
     ) {
       Feature()
     } withDependencies: {
+      $0.square.wasInitialized = { true }
       $0.date.now = date
     }
 
     await storeWithSquare.send(.terminalEvent(.success(.open))) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
-      $0.configState.canUpdateConfig = false
 
-      $0.paymentState.currentTransactionReference = ""
       $0.regState.mode = .acceptPayments
     }
   }
@@ -320,9 +263,7 @@ final class RegSetupViewTests: XCTestCase {
     await store.send(.terminalEvent(.success(.close))) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
-      $0.configState.canUpdateConfig = false
 
-      $0.paymentState.currentTransactionReference = ""
       $0.regState.mode = .close
     }
   }
@@ -333,10 +274,9 @@ final class RegSetupViewTests: XCTestCase {
     let store = TestStore(
       initialState: State(
         paymentState: .init(
-          webViewURL: Register.fallbackURL,
+          webViewUrl: Register.fallbackURL,
           themeColor: Register.fallbackThemeColor,
-          cart: .mock,
-          currentTransactionReference: "MOCK-REF"
+          cart: .mock
         ))
     ) {
       Feature()
@@ -347,11 +287,9 @@ final class RegSetupViewTests: XCTestCase {
     await store.send(.terminalEvent(.success(.updateCart(cart: .mock)))) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
-      $0.configState.canUpdateConfig = false
 
-      $0.paymentState.currentTransactionReference = ""
-      $0.paymentState.cart = .mock
-      $0.paymentState.alert = nil
+      $0.paymentState?.cart = .mock
+      $0.paymentState?.alert = nil
     }
   }
 
@@ -362,10 +300,9 @@ final class RegSetupViewTests: XCTestCase {
     let store = TestStore(
       initialState: State(
         paymentState: .init(
-          webViewURL: Register.fallbackURL,
+          webViewUrl: Register.fallbackURL,
           themeColor: Register.fallbackThemeColor,
-          cart: .mock,
-          currentTransactionReference: "MOCK-REF"
+          cart: .mock
         ))
     ) {
       Feature()
@@ -395,9 +332,6 @@ final class RegSetupViewTests: XCTestCase {
     ) {
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
-      $0.configState.canUpdateConfig = false
-
-      $0.paymentState.currentTransactionReference = "MOCK-REF1"
     }
 
     let someOrderIdExpectation = XCTestExpectation(description: "Checkout params with orderID")
@@ -420,38 +354,30 @@ final class RegSetupViewTests: XCTestCase {
             note: "MOCK-NOTE",
             reference: "MOCK-REF2")
         ))
-    ) {
-      $0.paymentState.currentTransactionReference = "MOCK-REF2"
-    }
+    )
 
     await fulfillment(of: [noOrderIdExpectation, someOrderIdExpectation], timeout: 1)
   }
 
   func testUpdateSquareToken() async throws {
-    let initialConfig = Config.mock
-
-    var expectedConfig = initialConfig
-    expectedConfig.squareAccessToken = "MOCK-ACCESS-TOKEN"
-    expectedConfig.squareRefreshToken = "MOCK-REFRESH-TOKEN"
-
-    let updatedConfigExpectation = XCTestExpectation(description: "Updated config")
-    let squareAuthorizationExpectation = XCTestExpectation(
-      description: "Attempt to authorize Square")
+    let expectation = XCTestExpectation()
+    expectation.expectedFulfillmentCount = 2
 
     let date = Date(timeIntervalSince1970: 1000)
 
     let store = TestStore(
-      initialState: .init(config: initialConfig)
+      initialState: .init(config: .mock, squareSetupState: .init(config: .mock))
     ) {
       Feature()
     } withDependencies: {
       $0.date.now = date
       $0.config.save = { updatedConfig in
-        XCTAssertEqual(updatedConfig, expectedConfig)
-        updatedConfigExpectation.fulfill()
+        XCTAssertEqual(updatedConfig, .mock)
+        expectation.fulfill()
       }
+      $0.square.wasInitialized = { true }
       $0.square.authorize = { _, _ in
-        squareAuthorizationExpectation.fulfill()
+        expectation.fulfill()
       }
       $0.square.authorizedLocation = { .mock }
     }
@@ -460,30 +386,29 @@ final class RegSetupViewTests: XCTestCase {
       .terminalEvent(
         .success(
           .updateToken(
-            accessToken: "MOCK-ACCESS-TOKEN",
-            refreshToken: "MOCK-REFRESH-TOKEN"
+            accessToken: "MOCK-ACCESS-TOKEN"
           )))
     ) {
-      $0.setConfig(expectedConfig)
-      $0.configState.canUpdateConfig = false
       $0.regState.isConnected = true
       $0.regState.lastEvent = date
     }
 
     await store.receive(.squareSetupAction(.authorized)) {
-      $0.squareSetupState.isAuthorized = true
+      $0.squareSetupState?.hasAuthorizedSquare = true
       $0.regState.squareIsReady = true
-      $0.squareSetupState.authorizedLocation = .mock
+      $0.squareSetupState?.squareAuthorizedLocation = .mock
     }
 
-    await fulfillment(of: [updatedConfigExpectation, squareAuthorizationExpectation], timeout: 1)
+    await fulfillment(of: [expectation], timeout: 1)
   }
 
-  private func standardAlertState(title: String, message: String) -> AlertState<Feature.Action> {
+  private func standardAlertState(title: String, message: String) -> AlertState<
+    Feature.Action.Alert
+  > {
     return AlertState {
       TextState(title)
     } actions: {
-      ButtonState(action: .alert(.dismiss)) {
+      ButtonState(action: .dismiss) {
         TextState("OK")
       }
     } message: {

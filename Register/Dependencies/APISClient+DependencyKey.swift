@@ -18,24 +18,23 @@ extension ApisClient {
   }
 
   private static func makeHttpRequest<Req: Encodable, Resp: Decodable>(
-    host: String,
-    endpoint: String,
+    endpoint: URL,
+    path: String,
     req: Req,
-    key: String? = nil
+    token: String? = nil
   ) async throws -> Resp {
-    let url = try Self.url(host)
-    let endpoint = url.appending(path: endpoint)
-    Self.logger.debug("Attempting to make request to \(endpoint, privacy: .public)")
+    let url = endpoint.appending(path: path)
+    Self.logger.debug("Attempting to make request to \(url, privacy: .public)")
 
     let jsonEncoder = JSONEncoder()
     let httpBody = try jsonEncoder.encode(req)
 
-    var request = URLRequest(url: endpoint)
+    var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = httpBody
     request.setValue("application/json", forHTTPHeaderField: "content-type")
-    if let key = key {
-      request.setValue("Bearer \(key)", forHTTPHeaderField: "authorization")
+    if let token {
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
     }
 
     let (data, response) = try await URLSession.shared.data(for: request)
@@ -57,19 +56,12 @@ extension ApisClient {
 
 extension ApisClient: DependencyKey {
   static let liveValue: ApisClient = Self(
-    registerTerminal: { req in
-      return try await Self.makeHttpRequest(
-        host: req.host,
-        endpoint: "/terminal/register",
-        req: req
-      )
-    },
     requestSquareToken: { config in
       let _: Bool = try await Self.makeHttpRequest(
-        host: config.host,
-        endpoint: "/terminal/square/token",
+        endpoint: config.endpoint,
+        path: "/registration/terminal/square/token",
         req: true,
-        key: config.key
+        token: config.token
       )
     },
     squareTransactionCompleted: { config, transaction in
@@ -88,26 +80,42 @@ extension ApisClient: DependencyKey {
       }
 
       let resp: TransactionResponse = try await Self.makeHttpRequest(
-        host: config.host,
-        endpoint: "/terminal/square/completed",
+        endpoint: config.endpoint,
+        path: "/registration/terminal/square/completed",
         req: transactionData,
-        key: config.key
+        token: config.token
       )
 
       return resp.success
     },
     subscribeToEvents: { config in
+      var host = config.mqttHost
+
+      var mqttConfig: MQTTClient.Configuration = .init(
+        userName: config.mqttUsername,
+        password: config.mqttPassword
+      )
+
+      if let url = URL(string: host) {
+        if url.scheme == "wss" {
+          Self.logger.debug("MQTT host was secure websocket, updating config")
+          mqttConfig = .init(
+            userName: config.mqttUsername,
+            password: config.mqttPassword,
+            useSSL: true,
+            webSocketConfiguration: .init(urlPath: url.path())
+          )
+          host = url.host() ?? config.mqttHost
+          Self.logger.trace("Updated MQTT info: host=\(host)")
+        }
+      }
+
       let client = MQTTClient(
-        host: config.mqttHost,
+        host: host,
         port: config.mqttPort,
-        identifier: config.terminalName,
+        identifier: "terminal-\(config.terminalName)",
         eventLoopGroupProvider: .createNew,
-        configuration: .init(
-          userName: config.mqttUserName,
-          password: config.mqttPassword,
-          useSSL: true,
-          useWebSockets: true
-        )
+        configuration: mqttConfig
       )
 
       return Effect<TaskResult<TerminalEvent>>.run { sub in

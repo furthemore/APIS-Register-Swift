@@ -10,75 +10,46 @@ import os
 
 struct Config: Equatable, Codable {
   var terminalName: String
-  var host: String
+  var endpoint: URL
   var token: String
-  var key: String
-  var locationId: String?
-  var webViewURL: URL?
-  var themeColor: String?
+  var webViewUrl: URL
+  var themeColor: String
 
   var mqttHost: String
   var mqttPort: Int
-  var mqttUserName: String
+  var mqttUsername: String
   var mqttPassword: String
   var mqttTopic: String
 
-  var squareAccessToken: String?
-  var squareRefreshToken: String?
-
-  var urlOrFallback: URL {
-    webViewURL ?? Register.fallbackURL
-  }
-
-  static let empty = Self(
-    terminalName: "",
-    host: "",
-    token: "",
-    key: "",
-    locationId: nil,
-    webViewURL: nil,
-    themeColor: nil,
-    mqttHost: "",
-    mqttPort: -1,
-    mqttUserName: "",
-    mqttPassword: "",
-    mqttTopic: "",
-    squareAccessToken: nil,
-    squareRefreshToken: nil
-  )
+  var squareApplicationId: String
+  var squareLocationId: String
 
   static let mock = Self(
     terminalName: "mockterminal",
-    host: "http://example.com",
+    endpoint: URL(string: "http://example.com")!,
     token: "MOCK-TOKEN",
-    key: "MOCK-KEY",
-    locationId: "MOCK-LOCATION",
-    webViewURL: URL(string: "http://example.com"),
-    themeColor: nil,
+    webViewUrl: URL(string: "http://example.com")!,
+    themeColor: "#000000",
     mqttHost: "http://example.com",
     mqttPort: 443,
-    mqttUserName: "MOCK-USERNAME",
+    mqttUsername: "MOCK-USERNAME",
     mqttPassword: "MOCK-PASSWORD",
     mqttTopic: "MOCK-TOPIC",
-    squareAccessToken: "MOCK-SQUARE-ACCESS",
-    squareRefreshToken: "MOCK-SQUARE-REFRESH"
+    squareApplicationId: "MOCK-SQUARE-APPLICATION-ID",
+    squareLocationId: "MOCK-SQUARE-LOCATION-ID"
   )
-
-  func withSquareTokens(accessToken: String, refreshToken: String) -> Self {
-    var config = self
-    config.squareAccessToken = accessToken
-    config.squareRefreshToken = refreshToken
-    return config
-  }
 }
 
 enum ConfigError: LocalizedError {
   case missingDocumentDirectory
+  case missingConfig
 
   var errorDescription: String? {
     switch self {
     case .missingDocumentDirectory:
       return "Application documents directory was missing."
+    case .missingConfig:
+      return "No configuration file was found."
     }
   }
 }
@@ -137,6 +108,8 @@ extension ConfigClient: DependencyKey {
       let encoder = JSONEncoder()
       let configData = try encoder.encode(config)
 
+      UserDefaults.standard.set(config.squareApplicationId, forKey: "squareApplicationId")
+
       try configData.write(to: configPath, options: .completeFileProtection)
       logger.info("Successfully saved config")
     },
@@ -144,6 +117,7 @@ extension ConfigClient: DependencyKey {
       logger.debug("Attempting to clear config")
       let configPath = try configFilePath()
       try fileManager.removeItem(at: configPath)
+      UserDefaults.standard.removeObject(forKey: "squareApplicationId")
       logger.info("Successfully cleared config")
     }
   )

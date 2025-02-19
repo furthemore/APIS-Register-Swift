@@ -27,54 +27,17 @@ final class RegSetupConfigViewTests: XCTestCase {
     }
   }
 
-  func testRegisterTerminal() async throws {
-    let expectation = XCTestExpectation()
-
-    let store = TestStore(initialState: State()) {
-      Feature()
-    } withDependencies: {
-      $0.apis.registerTerminal = { _ in .mock }
-      $0.config.save = { config in
-        expectation.fulfill()
-        XCTAssertEqual(config, .mock)
-      }
-    }
-
-    await store.send(.registerTerminal) {
-      $0.isLoading = true
-    }
-
-    await store.receive(.registered(.success(.mock))) {
-      $0.isLoading = false
-    }
-
-    await fulfillment(of: [expectation], timeout: 1)
-  }
-
   func testClearConfig() async throws {
     let expectation = XCTestExpectation()
 
-    let store = TestStore(initialState: State(canUpdateConfig: false, isPresentingScanner: true)) {
+    let store = TestStore(initialState: State(isPresentingScanner: true)) {
       Feature()
     } withDependencies: {
       $0.config.clear = { expectation.fulfill() }
     }
 
-    await store.send(.clear) {
-      $0 = .init()
-    }
+    await store.send(.clear)
 
     await fulfillment(of: [expectation], timeout: 1)
-  }
-
-  func testIsRegistrationDisabled() {
-    var state = State()
-    XCTAssertTrue(state.isRegistrationDisabled)
-
-    state.registerRequest = .mock
-    XCTAssertFalse(state.isRegistrationDisabled)
-
-    state.isLoading = true
-    XCTAssertTrue(state.isRegistrationDisabled)
   }
 }

@@ -7,6 +7,7 @@ import Combine
 import ComposableArchitecture
 import SquareMobilePaymentsSDK
 import UIKit
+import os
 
 // MARK: API models
 
@@ -40,11 +41,6 @@ struct SquareCheckoutResult: Equatable {
   let paymentId: String?
   let referenceId: String?
 
-  init(paymentId: String?, referenceId: String?) {
-    self.paymentId = paymentId
-    self.referenceId = referenceId
-  }
-
   static let mock = Self(
     paymentId: "MOCK-TX-ID",
     referenceId: "MOCK-CLIENT-TX-ID"
@@ -63,6 +59,7 @@ enum SquareCheckoutAction: Equatable {
 enum SquareError: Equatable, LocalizedError {
   case missingViewController
   case noMockReaderUI
+  case notInitialized
 
   var errorDescription: String? {
     switch self {
@@ -70,6 +67,8 @@ enum SquareError: Equatable, LocalizedError {
       return "Could not find UIViewController needed to present."
     case .noMockReaderUI:
       return "No mock reader UI was present."
+    case .notInitialized:
+      return "Square SDK was not initialized on app launch."
     }
   }
 }
@@ -78,7 +77,10 @@ enum SquareError: Equatable, LocalizedError {
 
 @DependencyClient
 struct SquareClient {
+  internal static let logger = Logger(subsystem: Register.bundle, category: "Square")
+
   var initialize: ([UIApplication.LaunchOptionsKey: Any]?) -> Void
+  var wasInitialized: () -> Bool = { false }
 
   var isAuthorized: () -> Bool = { false }
   var authorizedLocation: () -> SquareLocation?
@@ -109,6 +111,7 @@ struct SquareClient {
 extension SquareClient: TestDependencyKey {
   static let previewValue = Self(
     initialize: { _ in },
+    wasInitialized: { true },
     isAuthorized: { true },
     authorizedLocation: { SquareLocation.mock },
     authorize: { _, _ in },
