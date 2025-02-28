@@ -53,6 +53,13 @@ extension SquareClient: DependencyKey {
       }
     },
     wasInitialized: { Self.initialized },
+    environment: {
+      guard Self.initialized else {
+        return .sandbox
+      }
+
+      return MobilePaymentsSDK.shared.settingsManager.sdkSettings.environment
+    },
     isAuthorized: {
       guard Self.initialized else {
         return false

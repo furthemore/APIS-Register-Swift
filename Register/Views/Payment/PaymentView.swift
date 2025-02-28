@@ -41,6 +41,10 @@ struct PaymentFeature {
         state.showingMockReaderUI = false
         return .none
       case .toggleMockReaderUI:
+        guard square.environment() == .sandbox else {
+          return .none
+        }
+
         if state.showingMockReaderUI {
           square.hideMockReader()
           state.showingMockReaderUI = false

@@ -81,6 +81,7 @@ struct SquareClient {
 
   var initialize: ([UIApplication.LaunchOptionsKey: Any]?) -> Void
   var wasInitialized: () -> Bool = { false }
+  var environment: () -> Environment = { .sandbox }
 
   var isAuthorized: () -> Bool = { false }
   var authorizedLocation: () -> SquareLocation?
@@ -112,6 +113,7 @@ extension SquareClient: TestDependencyKey {
   static let previewValue = Self(
     initialize: { _ in },
     wasInitialized: { true },
+    environment: { .sandbox },
     isAuthorized: { true },
     authorizedLocation: { SquareLocation.mock },
     authorize: { _, _ in },

@@ -3,6 +3,7 @@
 //  Register
 //
 
+import CodeScanner
 import Combine
 import ComposableArchitecture
 import SquareMobilePaymentsSDK
@@ -130,6 +131,15 @@ struct RegSetupFeature {
           return .none
         }
 
+      case .setMode(.acceptPayments):
+        if let config = state.config {
+          state.regState.mode = .acceptPayments
+          state.paymentState = .init(
+            webViewUrl: config.webViewUrl,
+            themeColor: config.parsedColor
+          )
+        }
+        return .none
       case let .setMode(mode):
         state.regState.mode = mode
         return .none
@@ -451,12 +461,8 @@ struct RegSetupFeature {
     case let .success(.updateConfig(updatedConfig)):
       state.config = updatedConfig
 
-      switch state.regState.mode {
-      case .acceptPayments:
-        state.paymentState?.themeColor = updatedConfig.parsedColor
-      default:
-        break
-      }
+      state.paymentState?.themeColor = updatedConfig.parsedColor
+      state.paymentState?.webViewUrl = updatedConfig.webViewUrl
 
       if state.regState.isConfiguringSquare {
         state.regState.isConfiguringSquare = false
@@ -547,6 +553,26 @@ struct RegSetupView: View {
       .alert(
         store: store.scope(state: \.$alert, action: \.alert)
       )
+      .sheet(
+        isPresented: Binding(
+          get: {
+            store.configState.isPresentingScanner
+          },
+          set: { newValue in
+            store.send(.configAction(.showScanner(newValue)))
+          })
+      ) {
+        CodeScannerView(
+          codeTypes: [.qr],
+          simulatedData: Register.simulatedQRCode
+        ) {
+          store.send(
+            .configAction(
+              .scannerResult(
+                TaskResult($0.map { $0.string })
+              )))
+        }
+      }
       .fullScreenCover(
         isPresented: Binding(
           get: { store.regState.mode.isPresenting },

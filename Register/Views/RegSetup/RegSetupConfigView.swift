@@ -6,6 +6,7 @@
 import CodeScanner
 import ComposableArchitecture
 import SwiftUI
+import os
 
 @Reducer
 struct RegSetupConfigFeature {
@@ -21,6 +22,7 @@ struct RegSetupConfigFeature {
     case showScanner(Bool)
     case scannerResult(TaskResult<String>)
     case clear
+    case closeApp
   }
 
   var body: some Reducer<State, Action> {
@@ -36,6 +38,8 @@ struct RegSetupConfigFeature {
         return .run { _ in
           try? await config.clear()
         }
+      case .closeApp:
+        exit(0)
       }
     }
   }
@@ -58,18 +62,12 @@ struct RegSetupConfigView: View {
         Label("Clear Terminal Registration", systemImage: "trash")
           .foregroundColor(.red)
       }
-    }
-    .sheet(
-      isPresented: $store.isPresentingScanner.sending(\.showScanner)
-    ) {
-      CodeScannerView(
-        codeTypes: [.qr],
-        simulatedData: Register.simulatedQRCode
-      ) {
-        store.send(
-          .scannerResult(
-            TaskResult($0.map { $0.string })
-          ))
+
+      Button(role: .destructive) {
+        store.send(.closeApp)
+      } label: {
+        Label("Close App", systemImage: "ant.fill")
+          .foregroundStyle(Color.red)
       }
     }
   }
