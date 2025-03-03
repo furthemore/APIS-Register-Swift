@@ -3,6 +3,7 @@
 //  Register
 //
 
+import AVFoundation
 import CodeScanner
 import Combine
 import ComposableArchitecture
@@ -46,7 +47,7 @@ struct RegSetupFeature {
   }
 
   @ObservableState
-  struct State: Equatable {
+  struct State {
     @Presents var alert: AlertState<Action.Alert>? = nil
 
     var config: Config? = nil
@@ -387,6 +388,7 @@ struct RegSetupFeature {
     case .success(.clearCart):
       state.paymentState?.alert = nil
       state.paymentState?.cart = nil
+      state.paymentState?.webViewActionPublisher.send(.resetScroll)
       return .none
     case let .success(.updateCart(cart)):
       state.paymentState?.alert = nil
@@ -564,7 +566,12 @@ struct RegSetupView: View {
       ) {
         CodeScannerView(
           codeTypes: [.qr],
-          simulatedData: Register.simulatedQRCode
+          simulatedData: Register.simulatedQRCode,
+          videoCaptureDevice: AVCaptureDevice.default(
+            .builtInWideAngleCamera,
+            for: .video,
+            position: .front
+          )
         ) {
           store.send(
             .configAction(
