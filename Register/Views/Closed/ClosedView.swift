@@ -33,6 +33,12 @@ struct ClosedView: View {
     .foregroundColor(themeColor.adaptedTextColor)
     .background(themeColor)
     .statusBar(hidden: true)
+    .onAppear {
+      UIApplication.shared.isIdleTimerDisabled = true
+    }
+    .onDisappear {
+      UIApplication.shared.isIdleTimerDisabled = false
+    }
   }
 }
 

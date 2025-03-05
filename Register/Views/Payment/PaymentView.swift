@@ -85,6 +85,12 @@ struct PaymentView: View {
       .alert(
         store: self.store.scope(state: \.$alert, action: \.alert)
       )
+      .onAppear {
+        UIApplication.shared.isIdleTimerDisabled = true
+      }
+      .onDisappear {
+        UIApplication.shared.isIdleTimerDisabled = false
+      }
   }
 
   @ViewBuilder
