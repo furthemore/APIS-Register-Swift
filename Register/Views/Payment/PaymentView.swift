@@ -210,16 +210,16 @@ struct WebView: UIViewRepresentable {
     init(themeColor: Color) {
       self.previousThemeColor = themeColor
     }
-    
+
     func updateIfNeeded(_ webView: WKWebView, url: URL, themeColor: Color) {
       if url != previousUrl {
         let request = URLRequest(url: url)
         webView.load(request)
-        
+
         previousUrl = url
         previousThemeColor = themeColor
       }
-      
+
       if themeColor != previousThemeColor {
         previousThemeColor = themeColor
 
@@ -230,7 +230,7 @@ struct WebView: UIViewRepresentable {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
       updateThemeColor(webView)
     }
-    
+
     func updateThemeColor(_ webView: WKWebView) {
       webView.evaluateJavaScript(
         "document.documentElement.style.setProperty('--terminal-color', '\(previousThemeColor.hexString)');"
@@ -262,7 +262,7 @@ struct WebView: UIViewRepresentable {
     webView.isInspectable = true
     webView.configuration.preferences.isTextInteractionEnabled = false
     webView.scrollView.isScrollEnabled = false
-    
+
     webView.configuration.userContentController.addUserScript(userScript)
 
     context.coordinator.actionSubscriber = actionPublisher.sink { action in

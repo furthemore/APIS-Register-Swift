@@ -92,6 +92,7 @@ extension ApisClient: DependencyKey {
       var host = config.mqttHost
 
       var mqttConfig: MQTTClient.Configuration = .init(
+        version: .v5_0,
         userName: config.mqttUsername,
         password: config.mqttPassword
       )
@@ -100,6 +101,7 @@ extension ApisClient: DependencyKey {
         if url.scheme == "wss" {
           Self.logger.debug("MQTT host was secure websocket, updating config")
           mqttConfig = .init(
+            version: .v5_0,
             userName: config.mqttUsername,
             password: config.mqttPassword,
             useSSL: true,
@@ -113,27 +115,30 @@ extension ApisClient: DependencyKey {
       let client = MQTTClient(
         host: host,
         port: config.mqttPort,
-        identifier: "terminal-\(config.terminalName)",
+        identifier: "terminal-\(config.terminalName.lowercased())",
         eventLoopGroupProvider: .createNew,
         configuration: mqttConfig
       )
 
       return Effect<TaskResult<TerminalEvent>>.run { sub in
         do {
-          try await client.connect()
-          Self.logger.debug("Connected to MQTT server")
+          Self.logger.debug("Attempting to connect to MQTT server")
+          let ack = try await client.v5.connect(
+            cleanStart: false,
+            properties: [.sessionExpiryInterval(300)]
+          )
+          Self.logger.debug("Connected to MQTT server, sessionPresent: \(ack.sessionPresent)")
+
+          let listener = client.createPublishListener()
+          let jsonDecoder = JSONDecoder()
 
           let subscription = MQTTSubscribeInfo(topicFilter: config.mqttTopic, qos: .atLeastOnce)
           _ = try await client.subscribe(to: [subscription])
           Self.logger.debug("Created MQTT subscription to: \(config.mqttTopic, privacy: .public)")
 
-          let jsonDecoder = JSONDecoder()
+          sub(.success(.connected))
 
           await withTaskCancellationHandler {
-            let listener = client.createPublishListener()
-
-            sub(.success(.connected))
-
             listenerLoop: for await result in listener {
               let publish: MQTTPublishInfo
               switch result {
