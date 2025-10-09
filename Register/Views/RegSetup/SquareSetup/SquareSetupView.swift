@@ -86,13 +86,13 @@ struct SquareSetupFeature {
       case .requestRecordPermission:
         return avAudioSession.requestRecordPermission().map(Action.gotRecordPermission)
 
-      case let .locationManager(.didChangeAuthorization(status)):
+      case .locationManager(.didChangeAuthorization(let status)):
         state.locationAuthorizationStatus = status
         return .none
-      case let .bluetoothManager(.didChangeAuthorization(status)):
+      case .bluetoothManager(.didChangeAuthorization(let status)):
         state.bluetoothAuthorizationStatus = status
         return .none
-      case let .gotRecordPermission(permission):
+      case .gotRecordPermission(let permission):
         state.recordPermission = permission
         return .none
 
@@ -140,7 +140,7 @@ struct SquareSetupFeature {
         state.hasAuthorizedSquare = false
         state.squareAuthorizedLocation = nil
         return .none
-      case let .setErrorMessage(title, message):
+      case .setErrorMessage(let title, let message):
         state.isAuthorizingSquare = false
         state.alert = AlertState {
           TextState(title)

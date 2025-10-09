@@ -5,6 +5,7 @@
 
 import Combine
 import ComposableArchitecture
+import Foundation
 import MockReaderUI
 import SquareMobilePaymentsSDK
 
@@ -115,7 +116,7 @@ extension SquareClient: DependencyKey {
         throw SquareError.notInitialized
       }
 
-      guard let presentingView = SquareClient.presentingViewController else {
+      guard let presentingView = await SquareClient.presentingViewController else {
         throw SquareError.missingViewController
       }
 
@@ -136,7 +137,7 @@ extension SquareClient: DependencyKey {
         throw SquareError.notInitialized
       }
 
-      guard let presentingView = SquareClient.presentingViewController else {
+      guard let presentingView = await SquareClient.presentingViewController else {
         throw SquareError.missingViewController
       }
 
@@ -144,8 +145,17 @@ extension SquareClient: DependencyKey {
         let delegate = SquareCheckoutDelegate(continuation)
 
         DispatchQueue.main.async {
+          let paymentParameters = PaymentParameters(
+            paymentAttemptID: paymentParams.paymentAttemptId,
+            amountMoney: paymentParams.amountMoney,
+            processingMode: .onlineOnly
+          )
+          paymentParameters.referenceID = paymentParams.referenceId
+          paymentParameters.orderID = paymentParams.orderId
+          paymentParameters.note = paymentParams.note
+
           let paymentHandle = MobilePaymentsSDK.shared.paymentManager.startPayment(
-            paymentParams,
+            paymentParameters,
             promptParameters: PromptParameters(
               mode: .default,
               additionalMethods: AdditionalPaymentMethods()

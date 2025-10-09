@@ -66,7 +66,7 @@ class BluetoothManagerClient: NSObject {
       var previousAuthorization: CBManagerAuthorization? = nil
       let subscription = self.passthroughSubject.sink { value in
         switch value {
-        case let .didChangeAuthorization(newAuthorization):
+        case .didChangeAuthorization(let newAuthorization):
           if previousAuthorization != newAuthorization {
             continuation.yield(value)
             previousAuthorization = newAuthorization

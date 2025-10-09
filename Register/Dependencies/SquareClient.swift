@@ -47,6 +47,14 @@ struct SquareCheckoutResult: Equatable {
   )
 }
 
+struct SquarePaymentParams: Equatable {
+  let paymentAttemptId: String
+  let amountMoney: Money
+  let referenceId: String
+  let orderId: String?
+  let note: String?
+}
+
 enum SquareSettingsAction: Equatable {
   case presented(TaskResult<Bool>)
 }
@@ -90,7 +98,7 @@ struct SquareClient {
   var deauthorize: () async throws -> Void
 
   var openSettings: () async throws -> Void
-  var checkout: (PaymentParameters) async throws -> AsyncStream<SquareCheckoutAction>
+  var checkout: (SquarePaymentParams) async throws -> AsyncStream<SquareCheckoutAction>
 
   var showMockReader: () throws -> Void
   var hideMockReader: () -> Void

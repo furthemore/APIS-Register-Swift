@@ -5,9 +5,10 @@
 
 import Combine
 import ComposableArchitecture
+import ObjectiveC
 import SquareMobilePaymentsSDK
 
-class SquareCheckoutDelegate: NSObject, PaymentManagerDelegate {
+final class SquareCheckoutDelegate: NSObject, Sendable, PaymentManagerDelegate {
   let continuation: AsyncStream<SquareCheckoutAction>.Continuation
 
   init(_ continuation: AsyncStream<SquareCheckoutAction>.Continuation) {

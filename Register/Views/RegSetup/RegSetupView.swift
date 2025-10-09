@@ -44,6 +44,8 @@ struct RegSetupFeature {
     var isConfiguringSquare = false
     var squareIsReady = false
     var squareWasInitialized = false
+
+    var isPresentingPayment = false
   }
 
   @ObservableState
@@ -100,7 +102,7 @@ struct RegSetupFeature {
     }
   }
 
-  private enum CancelID { case sub, square }
+  private enum CancelID { case sub }
 
   var body: some Reducer<State, Action> {
     Scope(state: \.configState, action: \.configAction) {
@@ -123,7 +125,7 @@ struct RegSetupFeature {
             await send(.configLoaded(.failure(error)))
           }
         }
-      case let .scenePhaseChanged(phase):
+      case .scenePhaseChanged(let phase):
         if state.regState.isConnected && phase == .active {
           return connect(&state)
         } else if state.regState.isConnected && phase == .background {
@@ -141,10 +143,10 @@ struct RegSetupFeature {
           )
         }
         return .none
-      case let .setMode(mode):
+      case .setMode(let mode):
         state.regState.mode = mode
         return .none
-      case let .setConfiguringSquare(configuring):
+      case .setConfiguringSquare(let configuring):
         state.regState.isConfiguringSquare = false
         state.squareSetupState = nil
 
@@ -162,18 +164,18 @@ struct RegSetupFeature {
         }
 
         return .none
-      case let .setErrorMessage(title, message):
+      case .setErrorMessage(let title, let message):
         state.setAlert(title: title, message: message)
         return .none
 
-      case let .configLoaded(.success(config)):
+      case .configLoaded(.success(let config)):
         state.config = config
         state.regState.needsConfigLoad = false
         return connect(&state)
       case .configLoaded(.failure(ConfigError.missingConfig)):
         state.regState.needsConfigLoad = false
         return .none
-      case let .configLoaded(.failure(error)):
+      case .configLoaded(.failure(let error)):
         state.regState.needsConfigLoad = false
         state.setAlert(
           title: "Config Load Error",
@@ -189,7 +191,7 @@ struct RegSetupFeature {
           return connect(&state)
         }
 
-      case let .terminalEvent(event):
+      case .terminalEvent(let event):
         return handleTerminalEvent(&state, event: event)
       case .squareTransactionCompleted(true):
         return .none
@@ -207,9 +209,9 @@ struct RegSetupFeature {
       case .alert:
         return .none
 
-      case let .configAction(.scannerResult(.success(payload))):
+      case .configAction(.scannerResult(.success(let payload))):
         return decodeQRCode(state: &state, payload: payload)
-      case let .configAction(.scannerResult(.failure(error))):
+      case .configAction(.scannerResult(.failure(let error))):
         state.setAlert(
           title: "QR Code Error",
           message: error.localizedDescription
@@ -235,15 +237,18 @@ struct RegSetupFeature {
         return .none
 
       case .squareCheckoutAction(.cancelled):
+        state.regState.isPresentingPayment = false
         return .none
-      case let .squareCheckoutAction(.finished(.failure(error))):
+      case .squareCheckoutAction(.finished(.failure(let error))):
+        state.regState.isPresentingPayment = false
         state.paymentState?.alert = AlertState {
           TextState("Error")
         } message: {
           TextState(error.localizedDescription)
         }
         return .none
-      case let .squareCheckoutAction(.finished(.success(result))):
+      case .squareCheckoutAction(.finished(.success(let result))):
+        state.regState.isPresentingPayment = false
         guard let config = state.config, var paymentState = state.paymentState else {
           return .none
         }
@@ -390,11 +395,11 @@ struct RegSetupFeature {
       state.paymentState?.cart = nil
       state.paymentState?.webViewActionPublisher.send(.resetScroll)
       return .none
-    case let .success(.updateCart(cart)):
+    case .success(.updateCart(let cart)):
       state.paymentState?.alert = nil
       state.paymentState?.cart = cart
       return .none
-    case let .success(.processPayment(orderId, total, note, reference)):
+    case .success(.processPayment(let orderId, let total, let note, let reference)):
       guard var paymentState = state.paymentState else {
         state.setAlert(
           title: "No Payment State",
@@ -410,18 +415,19 @@ struct RegSetupFeature {
         return .none
       }
 
-      let params = PaymentParameters(
-        idempotencyKey: uuid().uuidString,
-        amountMoney: Money(amount: total, currency: .USD)
-      )
-
-      if let orderId {
-        params.orderID = orderId
-      } else {
-        params.note = note
+      if state.regState.isPresentingPayment {
+        return .none
       }
 
-      params.referenceID = reference
+      state.regState.isPresentingPayment = true
+
+      let params = SquarePaymentParams(
+        paymentAttemptId: uuid().uuidString,
+        amountMoney: Money(amount: total, currency: .USD),
+        referenceId: reference,
+        orderId: orderId,
+        note: orderId == nil ? note : nil
+      )
 
       return .run { send in
         do {
@@ -436,8 +442,7 @@ struct RegSetupFeature {
             ))
         }
       }
-      .cancellable(id: CancelID.square)
-    case let .success(.updateToken(accessToken)):
+    case .success(.updateToken(let accessToken)):
       guard let currentConfig = state.config else {
         state.setAlert(
           title: "Error",
@@ -460,7 +465,7 @@ struct RegSetupFeature {
           )
         }
       }
-    case let .success(.updateConfig(updatedConfig)):
+    case .success(.updateConfig(let updatedConfig)):
       state.config = updatedConfig
 
       state.paymentState?.themeColor = updatedConfig.parsedColor
@@ -492,7 +497,7 @@ struct RegSetupFeature {
       }
 
       return .concatenate(events)
-    case let .failure(error):
+    case .failure(let error):
       state.setAlert(
         title: "Event Error",
         message: error.localizedDescription

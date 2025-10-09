@@ -136,16 +136,16 @@ extension ApisClient: DependencyKey {
           _ = try await client.subscribe(to: [subscription])
           Self.logger.debug("Created MQTT subscription to: \(config.mqttTopic, privacy: .public)")
 
-          sub(.success(.connected))
+          await sub(.success(.connected))
 
           await withTaskCancellationHandler {
             listenerLoop: for await result in listener {
               let publish: MQTTPublishInfo
               switch result {
-              case let .success(pub):
+              case .success(let pub):
                 publish = pub
-              case let .failure(error):
-                sub(.failure(error))
+              case .failure(let error):
+                await sub(.failure(error))
                 break listenerLoop
               }
 
@@ -156,10 +156,10 @@ extension ApisClient: DependencyKey {
 
               do {
                 let event = try jsonDecoder.decode(TerminalEvent.self, from: data)
-                sub(.success(event))
+                await sub(.success(event))
               } catch {
                 Self.logger.error("Got unknown event: \(error, privacy: .public)")
-                sub(.failure(ApisError.unknownEvent))
+                await sub(.failure(ApisError.unknownEvent))
               }
             }
           } onCancel: {
@@ -168,7 +168,7 @@ extension ApisClient: DependencyKey {
         } catch {
           Self.logger.error("Got MQTT error: \(error, privacy: .public)")
           try? client.syncShutdownGracefully()
-          sub(.failure(ApisError.subscriptionError))
+          await sub(.failure(ApisError.subscriptionError))
         }
       }
     }

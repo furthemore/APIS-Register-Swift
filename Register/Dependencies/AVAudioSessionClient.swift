@@ -47,7 +47,7 @@ extension AVAudioSessionClient: DependencyKey {
             cont.resume(with: .success(RecordPermission(permission)))
           }
         }
-        send(permission)
+        await send(permission)
       }
     }
   )

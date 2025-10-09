@@ -28,7 +28,7 @@ struct RegSetupConfigFeature {
   var body: some Reducer<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .showScanner(shouldShow):
+      case .showScanner(let shouldShow):
         state.isPresentingScanner = shouldShow
         return .none
       case .scannerResult:
