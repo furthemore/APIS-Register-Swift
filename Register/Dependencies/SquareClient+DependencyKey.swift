@@ -111,18 +111,14 @@ extension SquareClient: DependencyKey {
         }
       }
     },
-    openSettings: {
+    openSettings: { viewController in
       guard Self.initialized else {
         throw SquareError.notInitialized
       }
 
-      guard let presentingView = await SquareClient.presentingViewController else {
-        throw SquareError.missingViewController
-      }
-
       return try await withCheckedThrowingContinuation { continuation in
         DispatchQueue.main.async {
-          MobilePaymentsSDK.shared.settingsManager.presentSettings(with: presentingView) { error in
+          MobilePaymentsSDK.shared.settingsManager.presentSettings(with: viewController) { error in
             if let error {
               continuation.resume(throwing: error)
             } else {
@@ -132,13 +128,9 @@ extension SquareClient: DependencyKey {
         }
       }
     },
-    checkout: { paymentParams in
+    checkout: { paymentParams, viewController in
       guard Self.initialized else {
         throw SquareError.notInitialized
-      }
-
-      guard let presentingView = await SquareClient.presentingViewController else {
-        throw SquareError.missingViewController
       }
 
       return AsyncStream { continuation in
@@ -160,7 +152,7 @@ extension SquareClient: DependencyKey {
               mode: .default,
               additionalMethods: AdditionalPaymentMethods()
             ),
-            from: presentingView,
+            from: viewController,
             delegate: delegate
           )
 

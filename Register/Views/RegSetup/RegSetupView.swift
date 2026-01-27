@@ -7,6 +7,9 @@ import AVFoundation
 import CodeScanner
 import Combine
 import ComposableArchitecture
+import ExternalAccessory
+import Foundation
+import PDFKit
 import SquareMobilePaymentsSDK
 import SwiftUI
 
@@ -17,6 +20,7 @@ struct RegSetupFeature {
   @Dependency(\.square) var square
   @Dependency(\.date) var date
   @Dependency(\.uuid) var uuid
+  @Dependency(\.zebra) var zebra
 
   enum Mode: Equatable {
     case acceptPayments, close, setup
@@ -46,6 +50,7 @@ struct RegSetupFeature {
     var squareWasInitialized = false
 
     var isPresentingPayment = false
+    var isPresentingPrint = false
   }
 
   @ObservableState
@@ -59,6 +64,7 @@ struct RegSetupFeature {
 
     var squareSetupState: SquareSetupFeature.State? = nil
     var paymentState: PaymentFeature.State? = nil
+    var printState: PrintFeature.State? = nil
 
     mutating func setAlert(title: String, message: String) {
       alert = AlertState {
@@ -75,9 +81,19 @@ struct RegSetupFeature {
     func readyForPayments(square: SquareClient) -> Bool {
       return config != nil && regState.squareIsReady && square.wasInitialized()
     }
+
+    func notify(_ notification: FrontendNotification, _ apis: ApisClient) -> Effect<Action> {
+      guard let config = config else {
+        return .none
+      }
+
+      return apis.notifyFrontend(config, notification).map { _ in
+        Action.notified(notification)
+      }
+    }
   }
 
-  enum Action: Equatable {
+  enum Action {
     case appeared
     case scenePhaseChanged(ScenePhase)
 
@@ -89,20 +105,23 @@ struct RegSetupFeature {
     case connectToggle
 
     case terminalEvent(TaskResult<TerminalEvent>)
+    case notified(FrontendNotification)
     case squareTransactionCompleted(Bool)
+
+    case showPrint(Bool)
+    case zebraEvent(ZebraEvent)
 
     case alert(PresentationAction<Alert>)
     case configAction(RegSetupConfigFeature.Action)
     case squareSetupAction(SquareSetupFeature.Action)
     case squareCheckoutAction(SquareCheckoutAction)
     case paymentAction(PaymentFeature.Action)
+    case printAction(PrintFeature.Action)
 
     enum Alert: Equatable {
       case dismiss
     }
   }
-
-  private enum CancelID { case sub }
 
   var body: some Reducer<State, Action> {
     Scope(state: \.configState, action: \.configAction) {
@@ -114,22 +133,30 @@ struct RegSetupFeature {
       case .appeared:
         state.regState.squareIsReady = square.isAuthorized()
         state.regState.squareWasInitialized = square.wasInitialized()
-        return .run { send in
-          do {
-            if let config = try await config.load() {
-              await send(.configLoaded(.success(config)))
-            } else {
-              await send(.configLoaded(.failure(ConfigError.missingConfig)))
+        return .merge(
+          .run { send in
+            do {
+              if let config = try await config.load() {
+                await send(.configLoaded(.success(config)))
+              } else {
+                await send(.configLoaded(.failure(ConfigError.missingConfig)))
+              }
+            } catch {
+              await send(.configLoaded(.failure(error)))
             }
-          } catch {
-            await send(.configLoaded(.failure(error)))
+          },
+          apis.getEvents().map(Action.terminalEvent),
+          .run { send in
+            for await event in zebra.events() {
+              await send(.zebraEvent(event))
+            }
           }
-        }
+        ).animation(.easeInOut)
+
       case .scenePhaseChanged(let phase):
-        if state.regState.isConnected && phase == .active {
-          return connect(&state)
-        } else if state.regState.isConnected && phase == .background {
-          return .cancel(id: CancelID.sub)
+        // Ensure MQTT is connected when becoming active.
+        if phase == .active && state.regState.isConnected {
+          return connect(&state).animation(.easeInOut)
         } else {
           return .none
         }
@@ -146,6 +173,7 @@ struct RegSetupFeature {
       case .setMode(let mode):
         state.regState.mode = mode
         return .none
+
       case .setConfiguringSquare(let configuring):
         state.regState.isConfiguringSquare = false
         state.squareSetupState = nil
@@ -164,6 +192,7 @@ struct RegSetupFeature {
         }
 
         return .none
+
       case .setErrorMessage(let title, let message):
         state.setAlert(title: title, message: message)
         return .none
@@ -171,7 +200,10 @@ struct RegSetupFeature {
       case .configLoaded(.success(let config)):
         state.config = config
         state.regState.needsConfigLoad = false
-        return connect(&state)
+        return .concatenate(
+          apis.prepareEvents(config).map(Action.terminalEvent),
+          connect(&state)
+        ).animation(.easeInOut)
       case .configLoaded(.failure(ConfigError.missingConfig)):
         state.regState.needsConfigLoad = false
         return .none
@@ -184,6 +216,7 @@ struct RegSetupFeature {
         return .run { _ in
           try await config.clear()
         }
+
       case .connectToggle:
         if state.regState.isConnected {
           return disconnect(state: &state)
@@ -192,15 +225,16 @@ struct RegSetupFeature {
         }
 
       case .terminalEvent(let event):
-        return handleTerminalEvent(&state, event: event)
-      case .squareTransactionCompleted(true):
-        return .none
+        return handleTerminalEvent(&state, event: event).animation(.easeInOut)
+
       case .squareTransactionCompleted(false):
         state.paymentState?.alert = AlertState {
           TextState("Error")
         } message: {
           TextState("Payment was not successful.")
         }
+        return .none
+      case .squareTransactionCompleted:
         return .none
 
       case .alert(.dismiss):
@@ -238,7 +272,7 @@ struct RegSetupFeature {
 
       case .squareCheckoutAction(.cancelled):
         state.regState.isPresentingPayment = false
-        return .none
+        return state.notify(.paymentCancelled, apis)
       case .squareCheckoutAction(.finished(.failure(let error))):
         state.regState.isPresentingPayment = false
         state.paymentState?.alert = AlertState {
@@ -246,11 +280,13 @@ struct RegSetupFeature {
         } message: {
           TextState(error.localizedDescription)
         }
-        return .none
+        return state.notify(.paymentFailed, apis)
       case .squareCheckoutAction(.finished(.success(let result))):
         state.regState.isPresentingPayment = false
+        var effects = [state.notify(.paymentCompleted, apis)]
+
         guard let config = state.config, var paymentState = state.paymentState else {
-          return .none
+          return .concatenate(effects)
         }
 
         guard let paymentId = result.paymentId, let referenceId = result.referenceId else {
@@ -259,7 +295,7 @@ struct RegSetupFeature {
           } message: {
             TextState("Finished payment was missing ID or reference.")
           }
-          return .none
+          return .concatenate(effects)
         }
 
         let transaction = SquareCompletedTransaction(
@@ -267,21 +303,33 @@ struct RegSetupFeature {
           paymentId: paymentId
         )
 
-        return .run { send in
-          let isValidTransaction: Bool
-          do {
-            isValidTransaction = try await apis.squareTransactionCompleted(config, transaction)
-          } catch {
-            Register.logger.error("Checkout failed: \(error, privacy: .public)")
-            isValidTransaction = false
-          }
-          await send(.squareTransactionCompleted(isValidTransaction))
-        }.animation(.easeInOut)
+        effects.append(
+          .run { send in
+            let isValidTransaction: Bool
+            do {
+              isValidTransaction = try await apis.squareTransactionCompleted(config, transaction)
+            } catch {
+              Register.logger.error("Checkout failed: \(error, privacy: .public)")
+              isValidTransaction = false
+            }
+            await send(.squareTransactionCompleted(isValidTransaction))
+          }.animation(.easeInOut)
+        )
+
+        return .concatenate(effects)
 
       case .paymentAction(.dismissView):
         state.regState.mode = .setup
         return .none
       case .paymentAction:
+        return .none
+
+      case .showPrint(let show):
+        state.regState.isPresentingPrint = show
+        state.printState = show ? state.printState ?? .init() : nil
+        return .none
+
+      case .zebraEvent, .notified, .printAction:
         return .none
       }
     }
@@ -291,6 +339,9 @@ struct RegSetupFeature {
     }
     .ifLet(\.paymentState, action: \.paymentAction) {
       PaymentFeature()
+    }
+    .ifLet(\.printState, action: \.printAction) {
+      PrintFeature()
     }
     #if DEBUG
       ._printChanges()
@@ -332,44 +383,32 @@ struct RegSetupFeature {
   }
 
   private func connect(_ state: inout State) -> Effect<Action> {
-    state.regState.isConnected = false
-
-    guard let config = state.config else {
-      state.setAlert(title: "Error", message: "Configuration was not set.")
-      return .none
-    }
-
-    do {
-      state.regState.isConnecting = true
-      return
-        try apis
-        .subscribeToEvents(config)
-        .map(Action.terminalEvent)
-        .cancellable(id: CancelID.sub, cancelInFlight: true)
-        .animation(.easeInOut)
-    } catch {
-      state.regState.isConnecting = false
-      state.setAlert(title: "Error", message: error.localizedDescription)
-      return .none
-    }
+    state.regState.isConnecting = true
+    return apis.connectEvents().map(Action.terminalEvent).animation(.easeInOut)
   }
 
   private func disconnect(state: inout State) -> Effect<Action> {
     state.regState.isConnecting = false
-    state.regState.isConnected = false
-    return .cancel(id: CancelID.sub)
+    if state.regState.isConnected {
+      return apis.disconnectEvents().map(Action.terminalEvent).animation(.easeInOut)
+    } else {
+      return .none
+    }
   }
 
   private func handleTerminalEvent(
     _ state: inout State,
     event: TaskResult<TerminalEvent>
   ) -> Effect<Action> {
-    state.regState.isConnecting = false
-    state.regState.isConnected = true
     state.regState.lastEvent = date.now
 
     switch event {
     case .success(.connected):
+      state.regState.isConnected = true
+      state.regState.isConnecting = false
+      return .none
+    case .success(.disconnected):
+      state.regState.isConnected = false
       return .none
     case .success(.open):
       if let config = state.config, state.readyForPayments(square: square) {
@@ -429,19 +468,23 @@ struct RegSetupFeature {
         note: orderId == nil ? note : nil
       )
 
-      return .run { send in
-        do {
-          for await action in try await square.checkout(params) {
-            await send(.squareCheckoutAction(action))
+      return .concatenate(
+        state.notify(.paymentOpened, apis),
+        .run { [viewController = paymentState.viewController] send in
+          do {
+            for await action in try await square.checkout(params, viewController) {
+              await send(.squareCheckoutAction(action))
+            }
+          } catch {
+            await send(
+              .setErrorMessage(
+                title: "Error",
+                message: "Could not create checkout: \(error.localizedDescription)"
+              )
+            )
           }
-        } catch {
-          await send(
-            .setErrorMessage(
-              title: "Error",
-              message: "Could not create checkout: \(error.localizedDescription)"
-            ))
         }
-      }
+      )
     case .success(.updateToken(let accessToken)):
       guard let currentConfig = state.config else {
         state.setAlert(
@@ -477,12 +520,13 @@ struct RegSetupFeature {
       }
 
       var events = [
-        disconnect(state: &state),
         .run { _ in
           do {
             try await config.save(updatedConfig)
           }
         },
+        disconnect(state: &state),
+        apis.prepareEvents(updatedConfig).map(Action.terminalEvent),
       ]
 
       if let existingConfig = state.config,
@@ -497,6 +541,40 @@ struct RegSetupFeature {
       }
 
       return .concatenate(events)
+
+    case .success(.printUrl(url: let url, serialNumber: let serialNumber)):
+      return .run { send in
+        do {
+          let (data, _) = try await URLSession.shared.data(from: url)
+
+          guard let pdf = PDFDocument(data: data) else {
+            await send(
+              .setErrorMessage(
+                title: "Print Error",
+                message: "Could not open data as PDF"
+              )
+            )
+            return
+          }
+
+          for pageIndex in 0..<pdf.pageCount {
+            let page = pdf.page(at: pageIndex)!
+            page.rotation = 270
+          }
+
+          let pdfData = pdf.dataRepresentation()!
+
+          try await zebra.print(pdfData, serialNumber)
+        } catch {
+          await send(
+            .setErrorMessage(
+              title: "Print Error",
+              message: error.localizedDescription
+            )
+          )
+        }
+      }
+
     case .failure(let error):
       state.setAlert(
         title: "Event Error",
@@ -541,6 +619,14 @@ struct RegSetupView: View {
 
         launch
 
+        Section("Printer") {
+          Button {
+            store.send(.showPrint(true))
+          } label: {
+            Label("Printers", systemImage: "printer")
+          }
+        }
+
         Section("Square") {
           Button {
             store.send(.setConfiguringSquare(true))
@@ -583,6 +669,20 @@ struct RegSetupView: View {
               .scannerResult(
                 TaskResult($0.map { $0.string })
               )))
+        }
+      }
+      .sheet(
+        isPresented: Binding(
+          get: {
+            store.regState.isPresentingPrint
+          },
+          set: { newValue in
+            store.send(.showPrint(newValue))
+          }
+        )
+      ) {
+        if let store = store.scope(state: \.printState, action: \.printAction) {
+          PrintView(store: store)
         }
       }
       .fullScreenCover(

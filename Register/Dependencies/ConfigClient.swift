@@ -20,6 +20,7 @@ struct Config: Equatable, Codable {
   var mqttUsername: String
   var mqttPassword: String
   var mqttTopic: String
+  var mqttPublishTopicPrefix: String?
 
   var squareApplicationId: String
   var squareLocationId: String

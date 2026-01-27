@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,12 +24,17 @@
 		E1327EEB29760AA9001DF7D6 /* ConfigClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */; };
 		E1327EEE29762EE4001DF7D6 /* MQTTNIO in Frameworks */ = {isa = PBXBuildFile; productRef = E1327EED29762EE4001DF7D6 /* MQTTNIO */; };
 		E1327EF429765F74001DF7D6 /* Register.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1327EF329765F74001DF7D6 /* Register.swift */; };
+		E149253A2F22A27B00B5B771 /* ZebraConnectedPrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14925392F22A27600B5B771 /* ZebraConnectedPrinter.swift */; };
+		E149253C2F2454F500B5B771 /* PrintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E149253B2F2454F300B5B771 /* PrintView.swift */; };
 		E1553F83297A33750081A6EF /* RegSetupConfigViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */; };
 		E1553F85297A37160081A6EF /* RegSetupViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F84297A37160081A6EF /* RegSetupViewTests.swift */; };
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
 		E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* LocationDetailView.swift */; };
 		E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7F2978B9C600675A5D /* LocationManager.swift */; };
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
+		E18E0EE62F26BB60002E743B /* Zebra.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE52F26BB5D002E743B /* Zebra.swift */; };
+		E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE72F293562002E743B /* ViewHolder.swift */; };
+		E18E0EEA2F2935E6002E743B /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE92F2935E4002E743B /* WebView.swift */; };
 		E1A2A5882D63B734004243A9 /* MockReaderUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5872D63B734004243A9 /* MockReaderUI */; };
 		E1A2A58A2D63B734004243A9 /* SquareMobilePaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */; };
 		E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2A58C2D640396004243A9 /* BluetoothManager.swift */; };
@@ -83,6 +88,9 @@
 		E1327EE82975C1D6001DF7D6 /* TwoColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnLayout.swift; sourceTree = "<group>"; };
 		E1327EEA29760AA9001DF7D6 /* ConfigClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigClient.swift; sourceTree = "<group>"; };
 		E1327EF329765F74001DF7D6 /* Register.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Register.swift; sourceTree = "<group>"; };
+		E14925382F22A20C00B5B771 /* Register-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Register-Bridging-Header.h"; sourceTree = "<group>"; };
+		E14925392F22A27600B5B771 /* ZebraConnectedPrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZebraConnectedPrinter.swift; sourceTree = "<group>"; };
+		E149253B2F2454F300B5B771 /* PrintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintView.swift; sourceTree = "<group>"; };
 		E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigViewTests.swift; sourceTree = "<group>"; };
 		E1553F84297A37160081A6EF /* RegSetupViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupViewTests.swift; sourceTree = "<group>"; };
 		E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareCheckoutDelegate.swift; sourceTree = "<group>"; };
@@ -90,6 +98,9 @@
 		E15CFC7F2978B9C600675A5D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		E15CFC812978EB0100675A5D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
+		E18E0EE52F26BB5D002E743B /* Zebra.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zebra.swift; sourceTree = "<group>"; };
+		E18E0EE72F293562002E743B /* ViewHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHolder.swift; sourceTree = "<group>"; };
+		E18E0EE92F2935E4002E743B /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		E1A2A58C2D640396004243A9 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigClient+SwiftUI.swift"; sourceTree = "<group>"; };
 		E1C527B129790838009B2B54 /* SquareClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareClient.swift; sourceTree = "<group>"; };
@@ -101,6 +112,10 @@
 		E1ED6317297A0F62005343A9 /* SquareSetupViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupViewTests.swift; sourceTree = "<group>"; };
 		E1ED6319297A10BA005343A9 /* AVAudioSessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioSessionClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E149251F2F22A1C700B5B771 /* Frameworks */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Frameworks; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		E1327EA929750A7A001DF7D6 /* Frameworks */ = {
@@ -137,6 +152,7 @@
 		E1327EA329750A7A001DF7D6 = {
 			isa = PBXGroup;
 			children = (
+				E14925382F22A20C00B5B771 /* Register-Bridging-Header.h */,
 				E15CFC812978EB0100675A5D /* README.md */,
 				E1327EAE29750A7A001DF7D6 /* Register */,
 				E1327EBF29750A7B001DF7D6 /* RegisterTests */,
@@ -165,6 +181,7 @@
 				E1327EF229765D29001DF7D6 /* Layouts */,
 				E1327EEF29765CDF001DF7D6 /* Views */,
 				E1327EB329750A7B001DF7D6 /* Assets.xcassets */,
+				E149251F2F22A1C700B5B771 /* Frameworks */,
 				E1327EB529750A7B001DF7D6 /* Preview Content */,
 			);
 			path = Register;
@@ -237,6 +254,8 @@
 				E1C527B129790838009B2B54 /* SquareClient.swift */,
 				E1C527B52979A227009B2B54 /* SquareClient+DependencyKey.swift */,
 				E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */,
+				E18E0EE52F26BB5D002E743B /* Zebra.swift */,
+				E14925392F22A27600B5B771 /* ZebraConnectedPrinter.swift */,
 			);
 			path = Dependencies;
 			sourceTree = "<group>";
@@ -248,6 +267,7 @@
 				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
 				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
+				E149253B2F2454F300B5B771 /* PrintView.swift */,
 			);
 			path = RegSetup;
 			sourceTree = "<group>";
@@ -258,6 +278,8 @@
 				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
 				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
 				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
+				E18E0EE72F293562002E743B /* ViewHolder.swift */,
+				E18E0EE92F2935E4002E743B /* WebView.swift */,
 			);
 			path = Payment;
 			sourceTree = "<group>";
@@ -302,6 +324,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E149251F2F22A1C700B5B771 /* Frameworks */,
 			);
 			name = Register;
 			packageProductDependencies = (
@@ -435,6 +460,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		E1A2A58B2D63B751004243A9 /* Run Square Mobile Payments SDK Setup */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -464,12 +490,17 @@
 				E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */,
 				E1327EDF29750F6C001DF7D6 /* ClosedView.swift in Sources */,
 				E1C148A52CE7AFAF001B5BBF /* ConfigClient+SwiftUI.swift in Sources */,
+				E18E0EE62F26BB60002E743B /* Zebra.swift in Sources */,
 				E1327EE72975BB73001DF7D6 /* PaymentLineBasicView.swift in Sources */,
 				E1DE8EAF29766742003795C2 /* RegSetupConfigView.swift in Sources */,
 				E1327EB229750A7A001DF7D6 /* RegSetupView.swift in Sources */,
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
+				E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */,
+				E18E0EEA2F2935E6002E743B /* WebView.swift in Sources */,
 				E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */,
+				E149253C2F2454F500B5B771 /* PrintView.swift in Sources */,
+				E149253A2F22A27B00B5B771 /* ZebraConnectedPrinter.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1C527B229790838009B2B54 /* SquareClient.swift in Sources */,
 				E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */,
@@ -678,7 +709,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.Register;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				PUBLIC_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Frameworks/Headers";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Register-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -720,7 +753,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.Register;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				PUBLIC_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Frameworks/Headers";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Register-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -842,8 +877,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture.git";
 			requirement = {
-				kind = exactVersion;
-				version = 1.16.1;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.16.1;
 			};
 		};
 		E1327EEC29762EE3001DF7D6 /* XCRemoteSwiftPackageReference "mqtt-nio" */ = {

@@ -32,6 +32,8 @@ struct SquareSetupFeature {
     var squareAuthorizedLocation: SquareLocation? = nil
 
     var config: Config
+
+    var viewController = UIViewController()
   }
 
   enum Action: Equatable {
@@ -102,9 +104,9 @@ struct SquareSetupFeature {
         }
         return .none
       case .openSquareSettings:
-        return .run { send in
+        return .run { [viewController = state.viewController] send in
           do {
-            try await square.openSettings()
+            try await square.openSettings(viewController)
           } catch {
             await send(
               .setErrorMessage(
@@ -176,27 +178,31 @@ struct SquareSetupView: View {
   @Bindable var store: StoreOf<SquareSetupFeature>
 
   var body: some View {
-    NavigationStack {
-      Form {
-        permissions
-        authorization
+    ZStack {
+      ViewHolder(controller: store.viewController)
 
-        Section("Square") {
-          Button {
-            store.send(.openSquareSettings)
-          } label: {
-            Label("Square Settings", systemImage: "gearshape")
+      NavigationStack {
+        Form {
+          permissions
+          authorization
+
+          Section("Square") {
+            Button {
+              store.send(.openSquareSettings)
+            } label: {
+              Label("Square Settings", systemImage: "gearshape")
+            }
           }
-        }
 
-        location
+          location
+        }
+        .onAppear { store.send(.appeared) }
+        .navigationTitle("Square Config")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert(
+          store: store.scope(state: \.$alert, action: \.alert)
+        )
       }
-      .onAppear { store.send(.appeared) }
-      .navigationTitle("Square Config")
-      .navigationBarTitleDisplayMode(.inline)
-      .alert(
-        store: store.scope(state: \.$alert, action: \.alert)
-      )
     }
   }
 

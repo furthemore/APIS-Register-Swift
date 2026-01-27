@@ -97,24 +97,12 @@ struct SquareClient {
   var authorize: (String, String) async throws -> Void
   var deauthorize: () async throws -> Void
 
-  var openSettings: () async throws -> Void
-  var checkout: (SquarePaymentParams) async throws -> AsyncStream<SquareCheckoutAction>
+  var openSettings: (UIViewController) async throws -> Void
+  var checkout:
+    (SquarePaymentParams, UIViewController) async throws -> AsyncStream<SquareCheckoutAction>
 
   var showMockReader: () throws -> Void
   var hideMockReader: () -> Void
-
-  @MainActor
-  static var presentingViewController: UIViewController? {
-    return UIApplication.shared.connectedScenes.filter {
-      $0.activationState == .foregroundActive
-    }
-    .compactMap { $0 as? UIWindowScene }
-    .flatMap { $0.windows }
-    .filter { $0.isKeyWindow }
-    .compactMap { $0.rootViewController }
-    .compactMap { $0.presentedViewController }
-    .first
-  }
 }
 
 extension SquareClient: TestDependencyKey {
@@ -126,8 +114,8 @@ extension SquareClient: TestDependencyKey {
     authorizedLocation: { SquareLocation.mock },
     authorize: { _, _ in },
     deauthorize: {},
-    openSettings: {},
-    checkout: { _ in .never },
+    openSettings: { _ in },
+    checkout: { _, _ in .never },
     showMockReader: {},
     hideMockReader: {}
   )

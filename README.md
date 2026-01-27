@@ -164,3 +164,11 @@ Updates the Terminal's configuration.
     }
 }
 ```
+
+## Printing
+
+This app supports directly printing badges using Zebra Bluetooth printers. You
+must add the [Link-OS SDK][linkos-sdk] to the app before building by placing the
+headers in Register/Frameworks/Headers and the framework in Register/Frameworks.
+
+[linkos-sdk]: https://www.zebra.com/ap/en/support-downloads/software/printer-software/link-os-multiplatform-sdk.html

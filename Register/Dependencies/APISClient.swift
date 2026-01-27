@@ -9,14 +9,24 @@ import os
 
 // MARK: API models
 
+enum FrontendNotification: String, Equatable, Codable {
+  case paymentOpened = "payment_opened"
+  case paymentCancelled = "payment_cancelled"
+  case paymentFailed = "payment_failed"
+  case paymentCompleted = "payment_completed"
+}
+
 enum TerminalEvent: Equatable, Codable {
   case connected
+  case disconnected
+
   case open, close, ready
   case clearCart
   case processPayment(orderId: String?, total: UInt, note: String, reference: String)
   case updateCart(cart: TerminalCart)
   case updateToken(accessToken: String)
   case updateConfig(config: Config)
+  case printUrl(url: URL, serialNumber: String?)
 }
 
 struct TerminalBadge: Identifiable, Equatable, Codable {
@@ -176,14 +186,22 @@ struct ApisClient {
   var requestSquareToken: (Config) async throws -> Void
   var squareTransactionCompleted: (Config, SquareCompletedTransaction) async throws -> Bool
 
-  var subscribeToEvents: (Config) throws -> Effect<TaskResult<TerminalEvent>>
+  var getEvents: () -> Effect<TaskResult<TerminalEvent>> = { .none }
+  var prepareEvents: (Config) -> Effect<TaskResult<TerminalEvent>> = { _ in .none }
+  var connectEvents: () -> Effect<TaskResult<TerminalEvent>> = { .none }
+  var disconnectEvents: () -> Effect<TaskResult<TerminalEvent>> = { .none }
+  var notifyFrontend: (Config, FrontendNotification) -> Effect<TaskResult<Void>> = { _, _ in .none }
 }
 
 extension ApisClient: TestDependencyKey {
   static var previewValue = Self(
     requestSquareToken: { _ in },
     squareTransactionCompleted: { _, _ in true },
-    subscribeToEvents: { _ in .none }
+    getEvents: { .none },
+    prepareEvents: { _ in .none },
+    connectEvents: { .none },
+    disconnectEvents: { .none },
+    notifyFrontend: { _, _ in .none }
   )
 
   static let testValue = Self()

@@ -32,6 +32,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   ) -> Bool {
     square.initialize(launchOptions)
 
+    EAAccessoryManager.shared().registerForLocalNotifications()
+
     return true
   }
 }
