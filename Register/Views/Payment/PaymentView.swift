@@ -21,15 +21,21 @@ struct PaymentFeature {
     var cart: TerminalCart?
 
     var showingMockReaderUI = false
+    var showingRegistration = false
 
     var viewController = UIViewController()
-    var webViewActionPublisher = PassthroughSubject<WebView.Action, Never>()
+
+    var paymentWebActionPublisher = PassthroughSubject<PaymentWebView.Action, Never>()
+    var regWebActionPublisher = CurrentValueSubject<RegistrationWebView.Action?, Never>(nil)
   }
 
   enum Action: Equatable {
     case alert(PresentationAction<Alert>)
     case dismissView
     case toggleMockReaderUI
+
+    case registrationAlert(String)
+    case registrationCompleted
 
     enum Alert: Equatable {}
   }
@@ -51,7 +57,7 @@ struct PaymentFeature {
         if state.showingMockReaderUI {
           square.hideMockReader()
           state.showingMockReaderUI = false
-        } else {
+        } else if square.environment() == .sandbox {
           do {
             try square.showMockReader()
             state.showingMockReaderUI = true
@@ -62,9 +68,23 @@ struct PaymentFeature {
               },
               message: {
                 TextState("\(error.localizedDescription)")
-              })
+              }
+            )
           }
         }
+        return .none
+      case .registrationAlert(let message):
+        state.alert = AlertState(
+          title: {
+            TextState("Error")
+          },
+          message: {
+            TextState(message)
+          }
+        )
+        return .none
+      case .registrationCompleted:
+        state.showingRegistration = false
         return .none
       }
     }
@@ -88,6 +108,15 @@ struct PaymentView: View {
     .alert(
       store: self.store.scope(state: \.$alert, action: \.alert)
     )
+    .fullScreenCover(isPresented: .constant(store.showingRegistration)) {
+      RegistrationWebView(actionPublisher: store.regWebActionPublisher) { message in
+        store.send(.registrationAlert(message))
+      } completionHandler: {
+        store.send(.registrationCompleted)
+      }
+      .ignoresSafeArea()
+      .statusBarHidden()
+    }
     .onAppear {
       UIApplication.shared.isIdleTimerDisabled = true
     }
@@ -102,8 +131,8 @@ struct PaymentView: View {
       payment
     } else {
       TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        WebView(
-          actionPublisher: store.webViewActionPublisher,
+        PaymentWebView(
+          actionPublisher: store.paymentWebActionPublisher,
           url: store.webViewUrl,
           themeColor: store.themeColor
         )

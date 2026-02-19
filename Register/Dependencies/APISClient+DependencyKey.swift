@@ -3,6 +3,7 @@
 //  Register
 //
 
+import AsyncAlgorithms
 import Combine
 import ComposableArchitecture
 import Foundation
@@ -58,119 +59,109 @@ extension ApisClient {
 
 private actor ApisMqtt {
   public enum Topic: String {
-    case paymentNotification = "payment_notification"
+    case paymentNotification = "web/notify/payment"
   }
 
-  private static let eventLoopGroup = NIOTSEventLoopGroup()
+  private let eventLoopGroup = NIOTSEventLoopGroup()
   private let byteBufferAllocator = ByteBufferAllocator()
-
   private let jsonDecoder = JSONDecoder()
   private let jsonEncoder = JSONEncoder()
 
-  private let eventSubject: PassthroughSubject<TaskResult<TerminalEvent>, Never>
-
   private var client: MQTTClient? = nil
-  private var task: Task<Void, Never>? = nil
   private var config: Config? = nil
 
   var isConnected: Bool {
-    client?.isActive() ?? false
+    client?.isActive() == true
   }
 
-  var events: AnyPublisher<TaskResult<TerminalEvent>, Never> {
-    eventSubject.eraseToAnyPublisher()
-  }
-
-  init() {
-    eventSubject = PassthroughSubject<TaskResult<TerminalEvent>, Never>()
-  }
-
-  func setUp(config: Config) async throws {
+  func setUp(
+    config: Config
+  ) async throws -> some AsyncSequence<Result<TerminalEvent, Error>, Never> {
     self.config = config
 
-    var host = config.mqttHost
-
-    var mqttConfig: MQTTClient.Configuration = .init(
-      version: .v5_0,
-      userName: config.mqttUsername,
-      password: config.mqttPassword
-    )
-
-    if let url = URL(string: host) {
-      if url.scheme == "wss" {
-        ApisClient.logger.trace("MQTT host was secure websocket, updating config")
-        mqttConfig = .init(
-          version: .v5_0,
-          userName: config.mqttUsername,
-          password: config.mqttPassword,
-          useSSL: true,
-          webSocketConfiguration: .init(urlPath: url.path())
-        )
-        host = url.host() ?? config.mqttHost
-        ApisClient.logger.trace("Updated MQTT info: host=\(host)")
-      }
+    let host: String
+    let mqttConfig: MQTTClient.Configuration
+    if let url = URL(string: config.mqttHost), url.scheme == "wss" {
+      host = url.host() ?? config.mqttHost
+      mqttConfig = .init(
+        version: .v5_0,
+        userName: config.mqttUsername,
+        password: config.mqttPassword,
+        useSSL: true,
+        webSocketConfiguration: .init(urlPath: url.path())
+      )
+    } else {
+      host = config.mqttHost
+      mqttConfig = .init(
+        version: .v5_0,
+        userName: config.mqttUsername,
+        password: config.mqttPassword
+      )
     }
 
     try? await disconnect()
-    try client?.syncShutdownGracefully()
 
-    let newClient = MQTTClient(
+    let client = MQTTClient(
       host: host,
       port: config.mqttPort,
       identifier: "terminal-\(config.terminalName.lowercased())",
-      eventLoopGroupProvider: .shared(Self.eventLoopGroup),
+      eventLoopGroupProvider: .shared(eventLoopGroup),
       configuration: mqttConfig
     )
+    self.client = client
 
-    client = newClient
+    let closeEvents = AsyncStream<Result<TerminalEvent, Error>> { continuation in
+      client.addCloseListener(named: "close") { result in
+        switch result {
+        case .success:
+          ApisClient.logger.info("MQTT connection closed")
+          continuation.yield(.success(.disconnected))
+        case .failure(let error):
+          ApisClient.logger.error("MQTT connection closed with error \(error)")
+          continuation.yield(.failure(error))
+        }
+      }
 
-    newClient.addCloseListener(named: "close") { [weak self] _ in
-      Task.detached {
-        ApisClient.logger.info("MQTT connection closed")
-        await self?.eventSubject.send(.success(.disconnected))
+      continuation.onTermination = { _ in
+        client.removeCloseListener(named: "close")
       }
     }
 
-    let listener = newClient.createPublishListener()
-
-    task = Task.detached {
-      await withTaskCancellationHandler {
-        listenerLoop: for await result in listener {
-          let publish: MQTTPublishInfo
-          switch result {
-          case .success(let pub):
-            publish = pub
-          case .failure(let error):
-            self.eventSubject.send(.failure(error))
-            break listenerLoop
-          }
-
-          var buffer = publish.payload
-          guard let data = buffer.readData(length: buffer.readableBytes) else {
-            ApisClient.logger.error("Could not read buffer of \(buffer.readableBytes) length")
-            continue
-          }
-
-          do {
-            let event = try self.jsonDecoder.decode(TerminalEvent.self, from: data)
-            self.eventSubject.send(.success(event))
-          } catch {
-            ApisClient.logger.error("Got unknown event: \(error)")
-          }
+    let mainEvents = client.createPublishListener().compactMap {
+      (result) -> Result<TerminalEvent, Error>? in
+      switch result {
+      case .success(let publish):
+        guard publish.topicName.hasPrefix(config.mqttPrefix) else {
+          ApisClient.logger.warning("Got unexpected topic name \(publish.topicName)")
+          return nil
         }
-      } onCancel: {
-        Task {
-          ApisClient.logger.info("Got task cancellation, disconnecting client")
-          try await newClient.disconnect()
+
+        var buffer = publish.payload
+        guard let data = buffer.readData(length: buffer.readableBytes) else {
+          ApisClient.logger.error("Could not read buffer of \(buffer.readableBytes) length")
+          return nil
         }
+
+        let topic = publish.topicName.dropFirst(config.mqttPrefix.count + 1)
+
+        do {
+          let event = try TerminalEvent(topic: String(topic), data: data)
+          return .success(event)
+        } catch {
+          ApisClient.logger.error("Got unknown event: topic=\(topic), \(error)")
+          return nil
+        }
+      case .failure(let error):
+        return .failure(error)
       }
     }
+
+    return merge(closeEvents, mainEvents)
   }
 
   func connect() async throws {
     guard let config, let client else {
-      ApisClient.logger.error("Attempted to connect with no MQTT config or client")
-      return
+      throw ApisError.eventsNotConfigured
     }
 
     if client.isActive() {
@@ -179,42 +170,46 @@ private actor ApisMqtt {
 
     do {
       ApisClient.logger.debug("Attempting to connect to MQTT server")
+
       let ack = try await client.v5.connect(
         cleanStart: false,
-        properties: [.sessionExpiryInterval(300)]
+        properties: [.sessionExpiryInterval(300)],
+        connectConfiguration: .init(keepAliveInterval: .seconds(10))
       )
-      ApisClient.logger.debug("Connected to MQTT server, sessionPresent: \(ack.sessionPresent)")
+      ApisClient.logger.trace("Connected to MQTT server, sessionPresent: \(ack.sessionPresent)")
 
-      let subscription = MQTTSubscribeInfo(topicFilter: config.mqttTopic, qos: .atLeastOnce)
+      let subscription = MQTTSubscribeInfo(
+        topicFilter: "\(config.mqttPrefix)/payment/#", qos: .atLeastOnce
+      )
       _ = try await client.subscribe(to: [subscription])
-      ApisClient.logger.debug("Created MQTT subscription to: \(config.mqttTopic, privacy: .public)")
     } catch {
-      ApisClient.logger.error("Could not create MQTT connection: \(error, privacy: .public)")
-
+      ApisClient.logger.error("Could not create MQTT connection: \(error)")
       throw ApisError.subscriptionError
     }
   }
 
   func disconnect() async throws {
-    task?.cancel()
+    if let client {
+      if client.isActive() {
+        try await client.disconnect()
+      }
 
-    if let client, client.isActive() {
-      try await client.disconnect()
+      try client.syncShutdownGracefully()
     }
+
+    client = nil
   }
 
   func publish<M: Encodable>(_ message: M, topic: Topic) async throws {
-    guard let config, let client, let publishTopicPrefix = config.mqttPublishTopicPrefix else {
-      ApisClient.logger.error(
-        "Attempted to publish with no MQTT config, client, or publish topic prefix")
-      return
+    guard let config, let client else {
+      throw ApisError.eventsNotConfigured
     }
 
-    try await client.publish(
-      to: "\(publishTopicPrefix)/\(topic.rawValue)",
-      payload: try jsonEncoder.encodeAsByteBuffer(message, allocator: byteBufferAllocator),
-      qos: .atLeastOnce
-    )
+    let topic = "\(config.mqttPrefix)/\(topic.rawValue)"
+    let payload = try jsonEncoder.encodeAsByteBuffer(message, allocator: byteBufferAllocator)
+
+    ApisClient.logger.debug("Publishing message to \(topic)")
+    try await client.publish(to: topic, payload: payload, qos: .atLeastOnce)
   }
 
   deinit {
@@ -259,46 +254,28 @@ extension ApisClient: DependencyKey {
 
         return resp.success
       },
-      getEvents: {
-        return .run { send in
-          for await event in await apisMqtt.events.values {
-            await send(event)
-          }
-        }
-      },
-      prepareEvents: { config in
+      setUpEvents: { config in
         return .run { send in
           do {
-            try await apisMqtt.setUp(config: config)
+            let events = try await apisMqtt.setUp(config: config)
+            await send(.success(.setUp))
+
+            for await event in events {
+              await send(event)
+            }
           } catch {
             await send(.failure(error))
           }
         }
       },
       connectEvents: {
-        return .run { send in
-          do {
-            try await apisMqtt.connect()
-            await send(.success(.connected))
-          } catch {
-            await send(.failure(error))
-          }
-        }
+        try await apisMqtt.connect()
       },
       disconnectEvents: {
-        return .run { send in
-          do {
-            try await apisMqtt.disconnect()
-            await send(.success(.disconnected))
-          } catch {
-            await send(.failure(error))
-          }
-        }
+        try await apisMqtt.disconnect()
       },
       notifyFrontend: { config, notification in
-        return .run { _ in
-          try? await apisMqtt.publish(notification, topic: .paymentNotification)
-        }
+        try await apisMqtt.publish(notification, topic: .paymentNotification)
       }
     )
   }

@@ -3,6 +3,7 @@
 //  Register
 //
 
+import Combine
 import ComposableArchitecture
 import SwiftUI
 
@@ -10,14 +11,35 @@ import SwiftUI
 struct RegisterApp: App {
   @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+  let windowEvents = PassthroughSubject<WindowEvent, Never>()
+
   var body: some Scene {
     WindowGroup {
       if !_XCTIsTesting {
         RegSetupView(
           store: Store(initialState: .init()) {
             RegSetupFeature()
-          }
+          },
+          windowEvents: windowEvents
         )
+      }
+    }
+    .commands {
+      CommandMenu("Actions") {
+        Button("Setup", systemImage: "gear") {
+          windowEvents.send(.setup)
+        }
+        .keyboardShortcut("T")
+
+        Button("Close", systemImage: "xmark") {
+          windowEvents.send(.close)
+        }
+        .keyboardShortcut("E")
+
+        Button("Ready", systemImage: "cart") {
+          windowEvents.send(.open)
+        }
+        .keyboardShortcut("D")
       }
     }
   }

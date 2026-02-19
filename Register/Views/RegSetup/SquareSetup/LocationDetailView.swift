@@ -16,10 +16,8 @@ struct LocationDetailView: View {
       Text(value).foregroundColor(.secondary)
     }
     .contextMenu {
-      Button {
+      Button("Copy Value", systemImage: "clipboard") {
         UIPasteboard.general.string = value
-      } label: {
-        Label("Copy Value", systemImage: "clipboard")
       }
     }
   }

@@ -37,10 +37,27 @@ struct RegSetupFeature {
 
   @ObservableState
   struct RegState: Equatable {
+    enum ConnectionState: Equatable {
+      case disconnected
+      case connecting
+      case connected
+
+      var isConnecting: Bool {
+        self == .connecting
+      }
+
+      var isConnected: Bool {
+        self == .connected
+      }
+
+      var wantsConnection: Bool {
+        isConnected || isConnecting
+      }
+    }
+
     var needsConfigLoad = true
 
-    var isConnecting = false
-    var isConnected = false
+    var connectionState: ConnectionState = .disconnected
     var lastEvent: Date? = nil
 
     var mode = Mode.setup
@@ -87,8 +104,12 @@ struct RegSetupFeature {
         return .none
       }
 
-      return apis.notifyFrontend(config, notification).map { _ in
-        Action.notified(notification)
+      return .run { send in
+        do {
+          try await apis.notifyFrontend(config, notification)
+        } catch {
+          await send(.setErrorMessage(title: "Notify Error", message: error.localizedDescription))
+        }
       }
     }
   }
@@ -100,12 +121,12 @@ struct RegSetupFeature {
     case setMode(Mode)
     case setConfiguringSquare(Bool)
     case setErrorMessage(title: String, message: String)
+    case windowEvent(WindowEvent)
 
     case configLoaded(TaskResult<Config>)
     case connectToggle
 
-    case terminalEvent(TaskResult<TerminalEvent>)
-    case notified(FrontendNotification)
+    case terminalEvent(Result<TerminalEvent, Error>)
     case squareTransactionCompleted(Bool)
 
     case showPrint(Bool)
@@ -121,6 +142,10 @@ struct RegSetupFeature {
     enum Alert: Equatable {
       case dismiss
     }
+  }
+
+  enum CancelID: Hashable {
+    case events
   }
 
   var body: some Reducer<State, Action> {
@@ -145,7 +170,6 @@ struct RegSetupFeature {
               await send(.configLoaded(.failure(error)))
             }
           },
-          apis.getEvents().map(Action.terminalEvent),
           .run { send in
             for await event in zebra.events() {
               await send(.zebraEvent(event))
@@ -155,14 +179,14 @@ struct RegSetupFeature {
 
       case .scenePhaseChanged(let phase):
         // Ensure MQTT is connected when becoming active.
-        if phase == .active && state.regState.isConnected {
+        if phase == .active && state.regState.connectionState.wantsConnection {
           return connect(&state).animation(.easeInOut)
         } else {
           return .none
         }
 
-      case .setMode(.acceptPayments):
-        if let config = state.config {
+      case .setMode(.acceptPayments), .windowEvent(.open):
+        if let config = state.config, state.regState.connectionState.isConnected {
           state.regState.mode = .acceptPayments
           state.paymentState = .init(
             webViewUrl: config.webViewUrl,
@@ -172,6 +196,12 @@ struct RegSetupFeature {
         return .none
       case .setMode(let mode):
         state.regState.mode = mode
+        return .none
+      case .windowEvent(.close):
+        state.regState.mode = .close
+        return .none
+      case .windowEvent(.setup):
+        state.regState.mode = .setup
         return .none
 
       case .setConfiguringSquare(let configuring):
@@ -200,10 +230,7 @@ struct RegSetupFeature {
       case .configLoaded(.success(let config)):
         state.config = config
         state.regState.needsConfigLoad = false
-        return .concatenate(
-          apis.prepareEvents(config).map(Action.terminalEvent),
-          connect(&state)
-        ).animation(.easeInOut)
+        return setUpEvents(&state)
       case .configLoaded(.failure(ConfigError.missingConfig)):
         state.regState.needsConfigLoad = false
         return .none
@@ -214,14 +241,14 @@ struct RegSetupFeature {
           message: error.localizedDescription
         )
         return .run { _ in
-          try await config.clear()
+          try! await config.clear()
         }
 
       case .connectToggle:
-        if state.regState.isConnected {
+        if state.regState.connectionState.wantsConnection {
           return disconnect(state: &state)
         } else {
-          return connect(&state)
+          return setUpEvents(&state)
         }
 
       case .terminalEvent(let event):
@@ -254,7 +281,7 @@ struct RegSetupFeature {
       case .configAction(.clear):
         return .concatenate(
           .run { _ in
-            try await square.deauthorize()
+            try! await square.deauthorize()
           },
           disconnect(state: &state)
         )
@@ -321,6 +348,8 @@ struct RegSetupFeature {
       case .paymentAction(.dismissView):
         state.regState.mode = .setup
         return .none
+      case .paymentAction(.registrationCompleted):
+        return state.notify(.registrationCompleted, apis)
       case .paymentAction:
         return .none
 
@@ -329,7 +358,7 @@ struct RegSetupFeature {
         state.printState = show ? state.printState ?? .init() : nil
         return .none
 
-      case .zebraEvent, .notified, .printAction:
+      case .zebraEvent, .printAction:
         return .none
       }
     }
@@ -382,15 +411,44 @@ struct RegSetupFeature {
     }
   }
 
+  private func setUpEvents(_ state: inout State) -> Effect<Action> {
+    guard let config = state.config else {
+      return .none
+    }
+
+    return .concatenate(
+      disconnect(state: &state),
+      apis
+        .setUpEvents(config)
+        .map(Action.terminalEvent)
+        .cancellable(id: CancelID.events, cancelInFlight: true)
+    )
+    .animation(.easeInOut)
+  }
+
   private func connect(_ state: inout State) -> Effect<Action> {
-    state.regState.isConnecting = true
-    return apis.connectEvents().map(Action.terminalEvent).animation(.easeInOut)
+    state.regState.connectionState = .connecting
+
+    return .run { send in
+      do {
+        try await apis.connectEvents()
+        await send(.terminalEvent(.success(.connected)))
+      } catch {
+        await send(.terminalEvent(.failure(error)))
+      }
+    }
+    .animation(.easeInOut)
   }
 
   private func disconnect(state: inout State) -> Effect<Action> {
-    state.regState.isConnecting = false
-    if state.regState.isConnected {
-      return apis.disconnectEvents().map(Action.terminalEvent).animation(.easeInOut)
+    let wantedConnection = state.regState.connectionState.wantsConnection
+    state.regState.connectionState = .disconnected
+
+    if wantedConnection {
+      return .run { send in
+        try? await apis.disconnectEvents()
+      }
+      .animation(.easeInOut)
     } else {
       return .none
     }
@@ -398,59 +456,65 @@ struct RegSetupFeature {
 
   private func handleTerminalEvent(
     _ state: inout State,
-    event: TaskResult<TerminalEvent>
+    event: Result<TerminalEvent, Error>
   ) -> Effect<Action> {
-    state.regState.lastEvent = date.now
+    if case .success(let event) = event, !event.isFakeEvent {
+      state.regState.lastEvent = date.now
+    }
 
     switch event {
+    case .success(.setUp):
+      return connect(&state)
     case .success(.connected):
-      state.regState.isConnected = true
-      state.regState.isConnecting = false
+      state.regState.connectionState = .connected
       return .none
     case .success(.disconnected):
-      state.regState.isConnected = false
-      return .none
-    case .success(.open):
-      if let config = state.config, state.readyForPayments(square: square) {
-        state.paymentState = .init(
-          webViewUrl: config.webViewUrl,
-          themeColor: config.parsedColor
-        )
-        state.regState.mode = .acceptPayments
+      let wasConnected = state.regState.connectionState.isConnected
+      state.regState.connectionState = .disconnected
+
+      if wasConnected {
+        return setUpEvents(&state)
       } else {
-        state.setAlert(
-          title: "Opening Failed",
-          message: "Terminal has not been fully configured."
-        )
+        return .none
+      }
+    case .success(.state(.open)), .success(.state(.ready)):
+      if state.regState.mode != .acceptPayments {
+        if let config = state.config, state.readyForPayments(square: square) {
+          state.paymentState = .init(
+            webViewUrl: config.webViewUrl,
+            themeColor: config.parsedColor
+          )
+          state.regState.mode = .acceptPayments
+        } else {
+          state.setAlert(
+            title: "Opening Failed",
+            message: "Terminal has not been fully configured."
+          )
+        }
       }
       return .none
-    case .success(.close):
+    case .success(.state(.close)):
+      state.paymentState = nil
       state.regState.mode = .close
       return .none
-    case .success(.ready):
+    case .success(.state):
       return .none
-    case .success(.clearCart):
+    case .success(.cartClear):
       state.paymentState?.alert = nil
       state.paymentState?.cart = nil
-      state.paymentState?.webViewActionPublisher.send(.resetScroll)
+      state.paymentState?.paymentWebActionPublisher.send(.resetScroll)
+      state.paymentState?.showingRegistration = false
       return .none
-    case .success(.updateCart(let cart)):
+    case .success(.cartUpdate(let cart)):
       state.paymentState?.alert = nil
       state.paymentState?.cart = cart
       return .none
-    case .success(.processPayment(let orderId, let total, let note, let reference)):
-      guard var paymentState = state.paymentState else {
+    case .success(.process(let payment)):
+      guard let paymentState = state.paymentState else {
         state.setAlert(
           title: "No Payment State",
           message: "Payments have not yet been enabled."
         )
-        return .none
-      }
-
-      if paymentState.showingMockReaderUI {
-        paymentState.alert = AlertState(title: {
-          TextState("Cannot accept payments while mock reader UI is displayed")
-        })
         return .none
       }
 
@@ -461,11 +525,11 @@ struct RegSetupFeature {
       state.regState.isPresentingPayment = true
 
       let params = SquarePaymentParams(
-        paymentAttemptId: uuid().uuidString,
-        amountMoney: Money(amount: total, currency: .USD),
-        referenceId: reference,
-        orderId: orderId,
-        note: orderId == nil ? note : nil
+        paymentAttemptId: payment.paymentAttemptId,
+        amountMoney: Money(amount: payment.total, currency: .USD),
+        referenceId: payment.reference,
+        orderId: payment.orderId,
+        note: payment.orderId == nil ? payment.note : nil
       )
 
       return .concatenate(
@@ -485,7 +549,7 @@ struct RegSetupFeature {
           }
         }
       )
-    case .success(.updateToken(let accessToken)):
+    case .success(.updateToken(let tokens)):
       guard let currentConfig = state.config else {
         state.setAlert(
           title: "Error",
@@ -497,7 +561,7 @@ struct RegSetupFeature {
       return .run { send in
         do {
           try await config.save(currentConfig)
-          try await square.authorize(accessToken, currentConfig.squareLocationId)
+          try await square.authorize(tokens.accessToken, currentConfig.squareLocationId)
           await send(.squareSetupAction(.authorized))
         } catch {
           await send(
@@ -509,6 +573,8 @@ struct RegSetupFeature {
         }
       }
     case .success(.updateConfig(let updatedConfig)):
+      let existingConfig = state.config
+
       state.config = updatedConfig
 
       state.paymentState?.themeColor = updatedConfig.parsedColor
@@ -519,33 +585,26 @@ struct RegSetupFeature {
         state.squareSetupState = nil
       }
 
-      var events = [
-        .run { _ in
-          do {
-            try await config.save(updatedConfig)
-          }
-        },
-        disconnect(state: &state),
-        apis.prepareEvents(updatedConfig).map(Action.terminalEvent),
-      ]
+      let updatedAppId = existingConfig?.squareApplicationId != updatedConfig.squareApplicationId
 
-      if let existingConfig = state.config,
-        existingConfig.squareApplicationId != updatedConfig.squareApplicationId
-      {
+      if updatedAppId {
         state.setAlert(
           title: "Updated Config",
           message: "Square Application ID changed, you must relaunch the app."
         )
-      } else {
-        events.append(connect(&state))
       }
 
-      return .concatenate(events)
+      return .concatenate(
+        .run { _ in
+          try! await config.save(updatedConfig)
+        },
+        setUpEvents(&state)
+      )
 
-    case .success(.printUrl(url: let url, serialNumber: let serialNumber)):
+    case .success(.print(let print)):
       return .run { send in
         do {
-          let (data, _) = try await URLSession.shared.data(from: url)
+          let (data, _) = try await URLSession.shared.data(from: print.url)
 
           guard let pdf = PDFDocument(data: data) else {
             await send(
@@ -564,7 +623,7 @@ struct RegSetupFeature {
 
           let pdfData = pdf.dataRepresentation()!
 
-          try await zebra.print(pdfData, serialNumber)
+          try await zebra.print(pdfData, print.serialNumber)
         } catch {
           await send(
             .setErrorMessage(
@@ -574,6 +633,17 @@ struct RegSetupFeature {
           )
         }
       }
+
+    case .success(.registrationDisplay(let display)):
+      state.paymentState?.showingRegistration = true
+      state.paymentState?.regWebActionPublisher.send(
+        .navigate(to: display.url, token: display.token)
+      )
+      return state.notify(.registrationOpened, apis)
+
+    case .success(.registrationCancel):
+      state.paymentState?.showingRegistration = false
+      return .none
 
     case .failure(let error):
       state.setAlert(
@@ -585,10 +655,16 @@ struct RegSetupFeature {
   }
 }
 
+enum WindowEvent {
+  case setup, open, close
+}
+
 struct RegSetupView: View {
   @SwiftUICore.Environment(\.scenePhase) var scenePhase
 
   @Bindable var store: StoreOf<RegSetupFeature>
+
+  let windowEvents: PassthroughSubject<WindowEvent, Never>
 
   var body: some View {
     NavigationStack {
@@ -599,11 +675,11 @@ struct RegSetupView: View {
             set: { _ in }
           ),
           isConnecting: Binding(
-            get: { store.regState.isConnecting },
+            get: { store.regState.connectionState.isConnecting },
             set: { _ in }
           ),
           isConnected: Binding(
-            get: { store.regState.isConnected },
+            get: { store.regState.connectionState.isConnected },
             set: { _ in }
           ),
           lastEvent: Binding(
@@ -620,19 +696,16 @@ struct RegSetupView: View {
         launch
 
         Section("Printer") {
-          Button {
+          Button("Printers", systemImage: "printer") {
             store.send(.showPrint(true))
-          } label: {
-            Label("Printers", systemImage: "printer")
           }
         }
 
         Section("Square") {
-          Button {
+          Button("Square Setup", systemImage: "square") {
             store.send(.setConfiguringSquare(true))
-          } label: {
-            Label("Square Setup", systemImage: "square")
-          }.disabled(store.config == nil || !store.regState.squareWasInitialized)
+          }
+          .disabled(store.config == nil || !store.regState.squareWasInitialized)
         }
 
         RegSetupConfigView(
@@ -722,22 +795,22 @@ struct RegSetupView: View {
       .onChange(of: scenePhase) { _, newPhase in
         store.send(.scenePhaseChanged(newPhase))
       }
+      .onReceive(windowEvents) { event in
+        store.send(.windowEvent(event))
+      }
     }
   }
 
   @ViewBuilder
   var launch: some View {
     Section("Launch") {
-      Button {
+      Button("Accept Payments", systemImage: "creditcard") {
         store.send(.setMode(.acceptPayments))
-      } label: {
-        Label("Accept Payments", systemImage: "creditcard")
-      }.disabled(!store.regState.squareIsReady || !store.regState.isConnected)
+      }
+      .disabled(!store.regState.squareIsReady || !store.regState.connectionState.isConnected)
 
-      Button {
+      Button("Close Terminal", systemImage: "xmark.square") {
         store.send(.setMode(.close))
-      } label: {
-        Label("Close Terminal", systemImage: "xmark.square")
       }
     }
   }
@@ -748,7 +821,8 @@ struct ContentView_Previews: PreviewProvider {
     RegSetupView(
       store: Store(initialState: .init()) {
         RegSetupFeature()
-      }
+      },
+      windowEvents: .init()
     )
   }
 }

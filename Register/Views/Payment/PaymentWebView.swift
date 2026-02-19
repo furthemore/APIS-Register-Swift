@@ -1,5 +1,5 @@
 //
-//  WebView.swift
+//  PaymentWebView.swift
 //  Register
 //
 
@@ -7,7 +7,7 @@ import Combine
 import SwiftUI
 import WebKit
 
-struct WebView: UIViewRepresentable {
+struct PaymentWebView: UIViewRepresentable {
   enum Action {
     case resetScroll
   }

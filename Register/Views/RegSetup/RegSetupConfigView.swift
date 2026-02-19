@@ -50,25 +50,19 @@ struct RegSetupConfigView: View {
 
   var body: some View {
     Section("Terminal Registration") {
-      Button {
+      Button("Scan Config QR Code", systemImage: "qrcode.viewfinder") {
         store.send(.showScanner(true))
-      } label: {
-        Label("Scan Config QR Code", systemImage: "qrcode.viewfinder")
       }
 
-      Button(role: .destructive) {
+      Button("Clear Terminal Registration", systemImage: "trash", role: .destructive) {
         store.send(.clear)
-      } label: {
-        Label("Clear Terminal Registration", systemImage: "trash")
-          .foregroundColor(.red)
       }
+      .foregroundStyle(.red)
 
-      Button(role: .destructive) {
+      Button("Close App", systemImage: "ant.fill", role: .destructive) {
         store.send(.closeApp)
-      } label: {
-        Label("Close App", systemImage: "ant.fill")
-          .foregroundStyle(Color.red)
       }
+      .foregroundStyle(.red)
     }
   }
 }

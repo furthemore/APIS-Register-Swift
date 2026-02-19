@@ -19,8 +19,7 @@ struct Config: Equatable, Codable {
   var mqttPort: Int
   var mqttUsername: String
   var mqttPassword: String
-  var mqttTopic: String
-  var mqttPublishTopicPrefix: String?
+  var mqttPrefix: String
 
   var squareApplicationId: String
   var squareLocationId: String
@@ -35,7 +34,7 @@ struct Config: Equatable, Codable {
     mqttPort: 443,
     mqttUsername: "MOCK-USERNAME",
     mqttPassword: "MOCK-PASSWORD",
-    mqttTopic: "MOCK-TOPIC",
+    mqttPrefix: "MOCK-TOPIC",
     squareApplicationId: "MOCK-SQUARE-APPLICATION-ID",
     squareLocationId: "MOCK-SQUARE-LOCATION-ID"
   )

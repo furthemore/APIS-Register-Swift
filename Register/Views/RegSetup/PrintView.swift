@@ -116,12 +116,10 @@ struct PrintView: View {
         }
 
         Section {
-          Button {
+          Button("Pair New Device", systemImage: "plus") {
             EAAccessoryManager
               .shared()
               .showBluetoothAccessoryPicker(withNameFilter: nil, completion: nil)
-          } label: {
-            Label("Pair New Device", systemImage: "plus")
           }
         }
         .navigationTitle("Printers")

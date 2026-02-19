@@ -187,10 +187,8 @@ struct SquareSetupView: View {
           authorization
 
           Section("Square") {
-            Button {
+            Button("Square Settings", systemImage: "gearshape") {
               store.send(.openSquareSettings)
-            } label: {
-              Label("Square Settings", systemImage: "gearshape")
             }
           }
 

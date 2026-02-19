@@ -34,7 +34,8 @@
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
 		E18E0EE62F26BB60002E743B /* Zebra.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE52F26BB5D002E743B /* Zebra.swift */; };
 		E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE72F293562002E743B /* ViewHolder.swift */; };
-		E18E0EEA2F2935E6002E743B /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE92F2935E4002E743B /* WebView.swift */; };
+		E18E0EEA2F2935E6002E743B /* PaymentWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE92F2935E4002E743B /* PaymentWebView.swift */; };
+		E18E0EEE2F2992D8002E743B /* RegistrationWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */; };
 		E1A2A5882D63B734004243A9 /* MockReaderUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5872D63B734004243A9 /* MockReaderUI */; };
 		E1A2A58A2D63B734004243A9 /* SquareMobilePaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */; };
 		E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2A58C2D640396004243A9 /* BluetoothManager.swift */; };
@@ -100,7 +101,8 @@
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
 		E18E0EE52F26BB5D002E743B /* Zebra.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zebra.swift; sourceTree = "<group>"; };
 		E18E0EE72F293562002E743B /* ViewHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHolder.swift; sourceTree = "<group>"; };
-		E18E0EE92F2935E4002E743B /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
+		E18E0EE92F2935E4002E743B /* PaymentWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentWebView.swift; sourceTree = "<group>"; };
+		E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationWebView.swift; sourceTree = "<group>"; };
 		E1A2A58C2D640396004243A9 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigClient+SwiftUI.swift"; sourceTree = "<group>"; };
 		E1C527B129790838009B2B54 /* SquareClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareClient.swift; sourceTree = "<group>"; };
@@ -278,8 +280,9 @@
 				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
 				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
 				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
+				E18E0EE92F2935E4002E743B /* PaymentWebView.swift */,
+				E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */,
 				E18E0EE72F293562002E743B /* ViewHolder.swift */,
-				E18E0EE92F2935E4002E743B /* WebView.swift */,
 			);
 			path = Payment;
 			sourceTree = "<group>";
@@ -497,10 +500,11 @@
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
 				E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */,
-				E18E0EEA2F2935E6002E743B /* WebView.swift in Sources */,
+				E18E0EEA2F2935E6002E743B /* PaymentWebView.swift in Sources */,
 				E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */,
 				E149253C2F2454F500B5B771 /* PrintView.swift in Sources */,
 				E149253A2F22A27B00B5B771 /* ZebraConnectedPrinter.swift in Sources */,
+				E18E0EEE2F2992D8002E743B /* RegistrationWebView.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1C527B229790838009B2B54 /* SquareClient.swift in Sources */,
 				E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */,
@@ -695,10 +699,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -739,10 +741,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
