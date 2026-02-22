@@ -18,8 +18,9 @@ struct PaymentLineBasicView: View {
   }
 }
 
-struct PaymentBasicLine_Previews: PreviewProvider {
-  static var previews: some View {
+#Preview("Line Items", traits: .sizeThatFitsLayout) {
+  List {
     PaymentLineBasicView(lineName: "Line Item", price: 20)
+    PaymentLineBasicView(lineName: "Another Item", price: 12.50)
   }
 }

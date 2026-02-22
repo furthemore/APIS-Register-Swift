@@ -16,9 +16,11 @@ struct RegSetupConfigFeature {
   @ObservableState
   struct State: Equatable {
     var isPresentingScanner = false
+    var preferFrontCamera = true
   }
 
-  enum Action: Equatable {
+  enum Action: BindableAction {
+    case binding(BindingAction<State>)
     case showScanner(Bool)
     case scannerResult(TaskResult<String>)
     case clear
@@ -26,8 +28,12 @@ struct RegSetupConfigFeature {
   }
 
   var body: some Reducer<State, Action> {
+    BindingReducer()
+
     Reduce { state, action in
       switch action {
+      case .binding:
+        return .none
       case .showScanner(let shouldShow):
         state.isPresentingScanner = shouldShow
         return .none
@@ -54,6 +60,13 @@ struct RegSetupConfigView: View {
         store.send(.showScanner(true))
       }
 
+      Toggle(isOn: $store.preferFrontCamera) {
+        Label(
+          "Prefer Front Camera",
+          systemImage: "arrow.trianglehead.2.clockwise.rotate.90.camera"
+        )
+      }
+
       Button("Clear Terminal Registration", systemImage: "trash", role: .destructive) {
         store.send(.clear)
       }
@@ -67,15 +80,12 @@ struct RegSetupConfigView: View {
   }
 }
 
-struct RegSetupConfigView_Previews: PreviewProvider {
-  static var previews: some View {
-    Form {
-      RegSetupConfigView(
-        store: Store(initialState: .init()) {
-          RegSetupConfigFeature()
-        }
-      )
-    }
-    .previewLayout(.fixed(width: 400, height: 400))
+#Preview(traits: .sizeThatFitsLayout) {
+  Form {
+    RegSetupConfigView(
+      store: Store(initialState: .init()) {
+        RegSetupConfigFeature()
+      }
+    )
   }
 }

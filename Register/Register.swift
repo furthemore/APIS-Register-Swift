@@ -24,7 +24,7 @@ struct Register {
       "mqttPort": 443,
       "mqttUsername": "MOCK-USERNAME",
       "mqttPassword": "MOCK-PASSWORD",
-      "mqttTopic": "MOCK-TOPIC",
+      "mqttPrefix": "MOCK-TOPIC",
       "squareApplicationId": "MOCK-SQUARE-APPLICATION-ID",
       "squareLocationId": "MOCK-SQUARE-LOCATION-ID"
     }

@@ -12,11 +12,18 @@ struct PaymentFeature {
   @Dependency(\.square) var square
 
   @ObservableState
-  struct State {
+  struct State: Equatable {
+    static func == (lhs: PaymentFeature.State, rhs: PaymentFeature.State) -> Bool {
+      return lhs.alert == rhs.alert && lhs.webViewUrl == rhs.webViewUrl
+        && lhs.themeColor == rhs.themeColor && lhs.cart == rhs.cart
+        && lhs.showingMockReaderUI == rhs.showingMockReaderUI
+        && lhs.viewController == rhs.viewController
+    }
+
     @Presents var alert: AlertState<Action.Alert>?
 
-    var webViewUrl: URL
-    var themeColor: Color
+    var webViewUrl: URL = Register.fallbackURL
+    var themeColor: Color = Register.fallbackThemeColor
 
     var cart: TerminalCart?
 
@@ -25,7 +32,7 @@ struct PaymentFeature {
 
     var viewController = UIViewController()
 
-    var paymentWebActionPublisher = PassthroughSubject<PaymentWebView.Action, Never>()
+    var webViewActionPublisher = PassthroughSubject<ThemedWebView.Action, Never>()
     var regWebActionPublisher = CurrentValueSubject<RegistrationWebView.Action?, Never>(nil)
   }
 
@@ -57,7 +64,7 @@ struct PaymentFeature {
         if state.showingMockReaderUI {
           square.hideMockReader()
           state.showingMockReaderUI = false
-        } else if square.environment() == .sandbox {
+        } else {
           do {
             try square.showMockReader()
             state.showingMockReaderUI = true
@@ -131,8 +138,8 @@ struct PaymentView: View {
       payment
     } else {
       TwoColumnLayout(mainColumnSize: 3 / 5, minimumSecondaryWidth: 300) {
-        PaymentWebView(
-          actionPublisher: store.paymentWebActionPublisher,
+        ThemedWebView(
+          actionPublisher: store.webViewActionPublisher,
           url: store.webViewUrl,
           themeColor: store.themeColor
         )
@@ -213,7 +220,7 @@ struct PaymentView: View {
   @ViewBuilder
   func badgeItems(_ cart: TerminalCart) -> some View {
     if cart.badges.isEmpty {
-      Text("No badges in cart").foregroundColor(.secondary)
+      Text("Cart is empty").foregroundColor(.secondary)
     } else {
       ForEach(cart.badges) { badge in
         PaymentLineBadgeView(
@@ -228,36 +235,10 @@ struct PaymentView: View {
   }
 }
 
-extension Color {
-  var hexString: String {
-    let uitColor = UIColor(self)
-    var r: CGFloat = 0
-    var g: CGFloat = 0
-    var b: CGFloat = 0
-    var a: CGFloat = 0
-
-    uitColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-
-    return String(
-      format: "#%02lX%02lX%02lX",
-      lroundf(Float(r) * 255),
-      lroundf(Float(g) * 255),
-      lroundf(Float(b) * 255)
-    )
-  }
-}
-
-struct PaymentView_Previews: PreviewProvider {
-  static var previews: some View {
-    PaymentView(
-      store: Store(
-        initialState: .init(
-          webViewUrl: Register.fallbackURL,
-          themeColor: Register.fallbackThemeColor
-        )
-      ) {
-        PaymentFeature()
-      }
-    )
-  }
+#Preview {
+  PaymentView(
+    store: Store(initialState: .init()) {
+      PaymentFeature()
+    }
+  )
 }

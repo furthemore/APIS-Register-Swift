@@ -1,11 +1,11 @@
 //
-//  LocationDetailView.swift
+//  NameValueView.swift
 //  Register
 //
 
 import SwiftUI
 
-struct LocationDetailView: View {
+struct NameValueView: View {
   let name: String
   let value: String
 
@@ -23,8 +23,6 @@ struct LocationDetailView: View {
   }
 }
 
-struct LocationDetailView_Previews: PreviewProvider {
-  static var previews: some View {
-    LocationDetailView(name: "Name", value: "Value")
-  }
+#Preview(traits: .sizeThatFitsLayout) {
+  NameValueView(name: "Name", value: "Value")
 }

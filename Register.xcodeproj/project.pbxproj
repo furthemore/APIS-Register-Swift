@@ -29,12 +29,12 @@
 		E1553F83297A33750081A6EF /* RegSetupConfigViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */; };
 		E1553F85297A37160081A6EF /* RegSetupViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1553F84297A37160081A6EF /* RegSetupViewTests.swift */; };
 		E15CFC7C297796DB00675A5D /* SquareCheckoutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */; };
-		E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* LocationDetailView.swift */; };
+		E15CFC7E2978B97400675A5D /* NameValueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7D2978B97400675A5D /* NameValueView.swift */; };
 		E15CFC802978B9C600675A5D /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15CFC7F2978B9C600675A5D /* LocationManager.swift */; };
 		E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E16EF7C729774C5500E03212 /* SquareSetupView.swift */; };
 		E18E0EE62F26BB60002E743B /* Zebra.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE52F26BB5D002E743B /* Zebra.swift */; };
 		E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE72F293562002E743B /* ViewHolder.swift */; };
-		E18E0EEA2F2935E6002E743B /* PaymentWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE92F2935E4002E743B /* PaymentWebView.swift */; };
+		E18E0EEA2F2935E6002E743B /* ThemedWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EE92F2935E4002E743B /* ThemedWebView.swift */; };
 		E18E0EEE2F2992D8002E743B /* RegistrationWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */; };
 		E1A2A5882D63B734004243A9 /* MockReaderUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5872D63B734004243A9 /* MockReaderUI */; };
 		E1A2A58A2D63B734004243A9 /* SquareMobilePaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E1A2A5892D63B734004243A9 /* SquareMobilePaymentsSDK */; };
@@ -95,13 +95,13 @@
 		E1553F82297A33750081A6EF /* RegSetupConfigViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupConfigViewTests.swift; sourceTree = "<group>"; };
 		E1553F84297A37160081A6EF /* RegSetupViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegSetupViewTests.swift; sourceTree = "<group>"; };
 		E15CFC7B297796DB00675A5D /* SquareCheckoutDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareCheckoutDelegate.swift; sourceTree = "<group>"; };
-		E15CFC7D2978B97400675A5D /* LocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailView.swift; sourceTree = "<group>"; };
+		E15CFC7D2978B97400675A5D /* NameValueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameValueView.swift; sourceTree = "<group>"; };
 		E15CFC7F2978B9C600675A5D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		E15CFC812978EB0100675A5D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E16EF7C729774C5500E03212 /* SquareSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSetupView.swift; sourceTree = "<group>"; };
 		E18E0EE52F26BB5D002E743B /* Zebra.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zebra.swift; sourceTree = "<group>"; };
 		E18E0EE72F293562002E743B /* ViewHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHolder.swift; sourceTree = "<group>"; };
-		E18E0EE92F2935E4002E743B /* PaymentWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentWebView.swift; sourceTree = "<group>"; };
+		E18E0EE92F2935E4002E743B /* ThemedWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedWebView.swift; sourceTree = "<group>"; };
 		E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationWebView.swift; sourceTree = "<group>"; };
 		E1A2A58C2D640396004243A9 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		E1C148A42CE7AFAA001B5BBF /* ConfigClient+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigClient+SwiftUI.swift"; sourceTree = "<group>"; };
@@ -265,7 +265,7 @@
 		E1ED6309297A0142005343A9 /* RegSetup */ = {
 			isa = PBXGroup;
 			children = (
-				E1ED630C297A0179005343A9 /* SquareSetup */,
+				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
 				E1327EB129750A7A001DF7D6 /* RegSetupView.swift */,
 				E1DE8EAE29766742003795C2 /* RegSetupConfigView.swift */,
 				E1DE8EAC29766485003795C2 /* RegSetupStatusView.swift */,
@@ -280,7 +280,7 @@
 				E1327EE029751BB6001DF7D6 /* PaymentView.swift */,
 				E1327EE42975B881001DF7D6 /* PaymentLineBadgeView.swift */,
 				E1327EE62975BB73001DF7D6 /* PaymentLineBasicView.swift */,
-				E18E0EE92F2935E4002E743B /* PaymentWebView.swift */,
+				E18E0EE92F2935E4002E743B /* ThemedWebView.swift */,
 				E18E0EED2F2992D5002E743B /* RegistrationWebView.swift */,
 				E18E0EE72F293562002E743B /* ViewHolder.swift */,
 			);
@@ -291,17 +291,9 @@
 			isa = PBXGroup;
 			children = (
 				E1327EE229751F0D001DF7D6 /* CurrentTimeView.swift */,
+				E15CFC7D2978B97400675A5D /* NameValueView.swift */,
 			);
 			path = Shared;
-			sourceTree = "<group>";
-		};
-		E1ED630C297A0179005343A9 /* SquareSetup */ = {
-			isa = PBXGroup;
-			children = (
-				E16EF7C729774C5500E03212 /* SquareSetupView.swift */,
-				E15CFC7D2978B97400675A5D /* LocationDetailView.swift */,
-			);
-			path = SquareSetup;
 			sourceTree = "<group>";
 		};
 		E1ED630D297A01A4005343A9 /* Closed */ = {
@@ -500,14 +492,14 @@
 				E1327EE52975B881001DF7D6 /* PaymentLineBadgeView.swift in Sources */,
 				E18E0EE82F29356C002E743B /* ViewHolder.swift in Sources */,
 				E1327EDD29750B7F001DF7D6 /* APISClient.swift in Sources */,
-				E18E0EEA2F2935E6002E743B /* PaymentWebView.swift in Sources */,
+				E18E0EEA2F2935E6002E743B /* ThemedWebView.swift in Sources */,
 				E1A2A58D2D64039A004243A9 /* BluetoothManager.swift in Sources */,
 				E149253C2F2454F500B5B771 /* PrintView.swift in Sources */,
 				E149253A2F22A27B00B5B771 /* ZebraConnectedPrinter.swift in Sources */,
 				E18E0EEE2F2992D8002E743B /* RegistrationWebView.swift in Sources */,
 				E1327EE129751BB6001DF7D6 /* PaymentView.swift in Sources */,
 				E1C527B229790838009B2B54 /* SquareClient.swift in Sources */,
-				E15CFC7E2978B97400675A5D /* LocationDetailView.swift in Sources */,
+				E15CFC7E2978B97400675A5D /* NameValueView.swift in Sources */,
 				E1C527B62979A227009B2B54 /* SquareClient+DependencyKey.swift in Sources */,
 				E1327EB029750A7A001DF7D6 /* RegisterApp.swift in Sources */,
 				E16EF7C829774C5500E03212 /* SquareSetupView.swift in Sources */,
@@ -768,7 +760,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -786,7 +778,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.syfaro.RegisterTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

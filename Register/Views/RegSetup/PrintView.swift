@@ -108,9 +108,9 @@ struct PrintView: View {
         ForEach(store.connectedPrinters) { printer in
           Section(printer.serialNumber) {
             if let status = printer.status {
-              LocationDetailView(name: "Ready", value: status.isReadyToPrint ? "Yes" : "No")
+              NameValueView(name: "Ready", value: status.isReadyToPrint ? "Yes" : "No")
             } else {
-              LocationDetailView(name: "Status", value: "Unknown")
+              NameValueView(name: "Status", value: "Unknown")
             }
           }
         }
@@ -137,5 +137,6 @@ struct PrintView: View {
   PrintView(
     store: Store(initialState: .init()) {
       PrintFeature()
-    })
+    }
+  )
 }

@@ -286,19 +286,19 @@ struct SquareSetupView: View {
   var location: some View {
     Section("Location") {
       if let location = store.squareAuthorizedLocation {
-        LocationDetailView(
+        NameValueView(
           name: "Location ID",
           value: location.id
         )
-        LocationDetailView(
+        NameValueView(
           name: "Location Name",
           value: location.name
         )
-        LocationDetailView(
+        NameValueView(
           name: "Merchant Category Code",
           value: location.mcc
         )
-        LocationDetailView(
+        NameValueView(
           name: "Currency",
           value: location.currency.currencyCode
         )
@@ -311,51 +311,44 @@ struct SquareSetupView: View {
   }
 }
 
-struct SquareSetupView_Previews: PreviewProvider {
-  static var previews: some View {
-    SquareSetupView(
-      store: Store(
-        initialState: .init(config: .mock),
-        reducer: {
-          SquareSetupFeature()
+#Preview("Default Unknown State") {
+  SquareSetupView(
+    store: Store(initialState: .init(config: .mock)) {
+      SquareSetupFeature()
+    } withDependencies: {
+      $0.square.authorizedLocation = { nil }
+    }
+  )
+}
+
+#Preview("Approved State") {
+  SquareSetupView(
+    store: Store(
+      initialState: .init(
+        recordPermission: .granted,
+        locationAuthorizationStatus: .authorizedWhenInUse,
+        hasAuthorizedSquare: true,
+        config: .mock
+      )
+    ) {
+      SquareSetupFeature()
+    }
+  )
+}
+
+#Preview("Alerting State") {
+  SquareSetupView(
+    store: Store(
+      initialState: .init(
+        alert: AlertState {
+          TextState("Title")
+        } message: {
+          TextState("Message")
         },
-        withDependencies: {
-          $0.square.authorizedLocation = { nil }
-        })
-    )
-    .previewLayout(.fixed(width: 400, height: 400))
-    .previewDisplayName("Default Unknown State")
-
-    SquareSetupView(
-      store: Store(
-        initialState: .init(
-          recordPermission: .granted,
-          locationAuthorizationStatus: .authorizedWhenInUse,
-          hasAuthorizedSquare: true,
-          config: .mock
-        )
-      ) {
-        SquareSetupFeature()
-      }
-    )
-    .previewLayout(.fixed(width: 400, height: 400))
-    .previewDisplayName("Approved State")
-
-    SquareSetupView(
-      store: Store(
-        initialState: .init(
-          alert: AlertState {
-            TextState("Title")
-          } message: {
-            TextState("Message")
-          },
-          config: .mock
-        )
-      ) {
-        SquareSetupFeature()
-      }
-    )
-    .previewLayout(.fixed(width: 400, height: 400))
-    .previewDisplayName("Alerting State")
-  }
+        config: .mock
+      )
+    ) {
+      SquareSetupFeature()
+    }
+  )
 }

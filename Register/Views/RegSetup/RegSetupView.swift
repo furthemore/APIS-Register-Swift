@@ -71,7 +71,7 @@ struct RegSetupFeature {
   }
 
   @ObservableState
-  struct State {
+  struct State: Equatable {
     @Presents var alert: AlertState<Action.Alert>? = nil
 
     var config: Config? = nil
@@ -502,7 +502,7 @@ struct RegSetupFeature {
     case .success(.cartClear):
       state.paymentState?.alert = nil
       state.paymentState?.cart = nil
-      state.paymentState?.paymentWebActionPublisher.send(.resetScroll)
+      state.paymentState?.webViewActionPublisher.send(.resetScroll)
       state.paymentState?.showingRegistration = false
       return .none
     case .success(.cartUpdate(let cart)):
@@ -669,30 +669,7 @@ struct RegSetupView: View {
   var body: some View {
     NavigationStack {
       Form {
-        RegSetupStatusView(
-          terminalName: Binding(
-            get: { store.config?.terminalName },
-            set: { _ in }
-          ),
-          isConnecting: Binding(
-            get: { store.regState.connectionState.isConnecting },
-            set: { _ in }
-          ),
-          isConnected: Binding(
-            get: { store.regState.connectionState.isConnected },
-            set: { _ in }
-          ),
-          lastEvent: Binding(
-            get: { store.regState.lastEvent },
-            set: { _ in }
-          ),
-          canConnect: Binding(
-            get: { store.config != nil },
-            set: { _ in }
-          ),
-          connectToggle: { store.send(.connectToggle) }
-        )
-
+        status
         launch
 
         Section("Printer") {
@@ -728,21 +705,7 @@ struct RegSetupView: View {
             store.send(.configAction(.showScanner(newValue)))
           })
       ) {
-        CodeScannerView(
-          codeTypes: [.qr],
-          simulatedData: Register.simulatedQRCode,
-          videoCaptureDevice: AVCaptureDevice.default(
-            .builtInWideAngleCamera,
-            for: .video,
-            position: .front
-          )
-        ) {
-          store.send(
-            .configAction(
-              .scannerResult(
-                TaskResult($0.map { $0.string })
-              )))
-        }
+        codeScanner
       }
       .sheet(
         isPresented: Binding(
@@ -802,6 +765,33 @@ struct RegSetupView: View {
   }
 
   @ViewBuilder
+  var status: some View {
+    RegSetupStatusView(
+      terminalName: Binding(
+        get: { store.config?.terminalName },
+        set: { _ in }
+      ),
+      isConnecting: Binding(
+        get: { store.regState.connectionState.isConnecting },
+        set: { _ in }
+      ),
+      isConnected: Binding(
+        get: { store.regState.connectionState.isConnected },
+        set: { _ in }
+      ),
+      lastEvent: Binding(
+        get: { store.regState.lastEvent },
+        set: { _ in }
+      ),
+      canConnect: Binding(
+        get: { store.config != nil },
+        set: { _ in }
+      ),
+      connectToggle: { store.send(.connectToggle) }
+    )
+  }
+
+  @ViewBuilder
   var launch: some View {
     Section("Launch") {
       Button("Accept Payments", systemImage: "creditcard") {
@@ -814,15 +804,32 @@ struct RegSetupView: View {
       }
     }
   }
+
+  @ViewBuilder
+  var codeScanner: some View {
+    CodeScannerView(
+      codeTypes: [.qr],
+      simulatedData: Register.simulatedQRCode,
+      videoCaptureDevice: AVCaptureDevice.default(
+        .builtInWideAngleCamera,
+        for: .video,
+        position: store.configState.preferFrontCamera ? .front : .unspecified
+      )
+    ) {
+      store.send(
+        .configAction(
+          .scannerResult(
+            TaskResult($0.map { $0.string })
+          )))
+    }
+  }
 }
 
-struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    RegSetupView(
-      store: Store(initialState: .init()) {
-        RegSetupFeature()
-      },
-      windowEvents: .init()
-    )
-  }
+#Preview {
+  RegSetupView(
+    store: Store(initialState: .init()) {
+      RegSetupFeature()
+    },
+    windowEvents: .init()
+  )
 }

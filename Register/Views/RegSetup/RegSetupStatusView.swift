@@ -57,30 +57,26 @@ struct RegSetupStatusView: View {
   }
 }
 
-struct RegSetupStatusView_Previews: PreviewProvider {
-  static var previews: some View {
-    Form {
-      RegSetupStatusView(
-        terminalName: .constant(nil),
-        isConnecting: .constant(false),
-        isConnected: .constant(false),
-        lastEvent: .constant(nil),
-        canConnect: .constant(false)
-      )
-    }
-    .previewLayout(.fixed(width: 400, height: 200))
-    .previewDisplayName("Disconnected")
+#Preview("Disconnected") {
+  Form {
+    RegSetupStatusView(
+      terminalName: .constant(nil),
+      isConnecting: .constant(false),
+      isConnected: .constant(false),
+      lastEvent: .constant(nil),
+      canConnect: .constant(false)
+    )
+  }
+}
 
-    Form {
-      RegSetupStatusView(
-        terminalName: .constant("Test Terminal"),
-        isConnecting: .constant(false),
-        isConnected: .constant(true),
-        lastEvent: .constant(Date(timeIntervalSince1970: 1_673_932_324)),
-        canConnect: .constant(true)
-      )
-    }
-    .previewLayout(.fixed(width: 400, height: 200))
-    .previewDisplayName("Connected")
+#Preview("Connected") {
+  Form {
+    RegSetupStatusView(
+      terminalName: .constant("Test Terminal"),
+      isConnecting: .constant(false),
+      isConnected: .constant(true),
+      lastEvent: .constant(Date(timeIntervalSince1970: 1_673_932_324)),
+      canConnect: .constant(true)
+    )
   }
 }

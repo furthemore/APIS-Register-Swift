@@ -22,6 +22,7 @@ final class SquareSetupViewTests: XCTestCase {
 
       $0.avAudioSession.recordPermission = { .granted }
 
+      $0.bluetoothManager.authorization = { .denied }
       $0.bluetoothManager.delegate = {
         AsyncStream { continuation in
           continuation.yield(.didChangeAuthorization(.allowedAlways))

@@ -23,11 +23,9 @@ struct PaymentLineBadgeView: View {
   var body: some View {
     HStack {
       VStack(alignment: .leading) {
+        Text(levelName + " Registration").bold()
         Text(name)
-        Text(levelName + " Registration")
-
-        Text("\"\(badgeName)\"")
-          .bold()
+        Text(badgeName)
       }
 
       Spacer()
@@ -45,22 +43,22 @@ struct PaymentLineBadgeView: View {
   }
 }
 
-struct PaymentBadgeLine_Previews: PreviewProvider {
-  static var previews: some View {
-    PaymentLineBadgeView(
-      name: "First Last",
-      badgeName: "Fancy Name",
-      levelName: "Sponsor",
-      price: 175,
-      discountedPrice: nil
-    ).previewDisplayName("Standard Badge")
+#Preview("Standard Badge", traits: .sizeThatFitsLayout) {
+  PaymentLineBadgeView(
+    name: "First Last",
+    badgeName: "Badge Name",
+    levelName: "Sponsor",
+    price: 175,
+    discountedPrice: nil
+  )
+}
 
-    PaymentLineBadgeView(
-      name: "First Last",
-      badgeName: "Fancy Name",
-      levelName: "Sponsor",
-      price: 175,
-      discountedPrice: 150
-    ).previewDisplayName("Discounted Badge")
-  }
+#Preview("Discounted Badge", traits: .sizeThatFitsLayout) {
+  PaymentLineBadgeView(
+    name: "First Last",
+    badgeName: "Badge Name",
+    levelName: "Sponsor",
+    price: 175,
+    discountedPrice: 150
+  )
 }
