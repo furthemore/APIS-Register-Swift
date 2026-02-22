@@ -112,12 +112,11 @@ Processes the payment by starting the Square Mobile Payments SDK.
 
 ```jsonc
 {
-    "processPayment": {
-        "orderId": "", // Square Order ID, if desired
-        "total": 100, // total payment expected, in cents
-        "note": "", // a note attached to the transaction, displayed to the user
-        "reference": "" // an internal reference, included when completing the transaction
-    }
+    "paymentAttemptId": "", // Unique ID for this payment attempt
+    "orderId": "", // Square Order ID, if desired
+    "total": 100, // total payment expected, in cents
+    "note": "", // a note attached to the transaction, displayed to the user
+    "reference": "" // an internal reference, included when completing the transaction
 }
 ```
 
@@ -144,20 +143,19 @@ values are used:
 * `open` - Sets terminal to accept payments
 * `close` - Sets terminal to closed screen
 
-### `payment/update/config`
+#### `payment/update/config`
 
 Updates the Terminal's configuration. The body should be the same as the data
 contained within the configuration QR code.
 
-### `payment/update/token`
+#### `payment/update/token`
 
 Update the authorization token for use with the Mobile Payments SDK.
 
 ```jsonc
 {
-    "updateSquareToken": {
-        "accessToken": ""
-    }
+    "accessToken": "",
+    "refreshToken": ""
 }
 ```
 
