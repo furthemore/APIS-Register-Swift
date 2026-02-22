@@ -21,7 +21,7 @@ The app must import settings from a QR code. The data must be formatted as follo
     "mqttPort": "",
     "mqttUsername": "",
     "mqttPassword": "",
-    "mqttTopic": "",
+    "mqttPrefix": "",
     "squareApplicationId": "",
     "squareLocationId": ""
 }
@@ -31,7 +31,7 @@ The app must import settings from a QR code. The data must be formatted as follo
 
 The app depends on the following API endpoints.
 
-### `POST /terminal/square/token`
+### `POST /registration/terminal/square/token`
 
 This is called when the client requests a new token to authenticate the Square
 Mobile Payments SDK. No meaningful data is provided in the request body, the key
@@ -40,7 +40,7 @@ is provided as a bearer token in the `Authorization` header.
 When the OAuth flow has completed on the server, the `updateToken` MQTT event
 should be emitted.
 
-### `POST /terminal/square/completed`
+### `POST /registration/terminal/square/completed`
 
 This is called when the terminal completes a payment with the Square Mobile
 Payments SDK. It is authenticated with a bearer authorization header. The body of
@@ -63,40 +63,50 @@ It expects a response like the following:
 
 ### MQTT
 
-Various JSON-encoded events should be emitted to the MQTT topic to control cart
-and payment behaviors.
+Various JSON-encoded events should be emitted to control cart and payment
+behaviors. Topics should all have the `mqttPrefix` prefix.
 
-#### Open
+#### `payment/cart/clear`
 
-Switches the terminal to the payments screen.
+Clears the cart. This is automatically performed when switching modes. No body
+is required.
 
-```jsonc
-{
-    "open": {}
-}
-```
+#### `payment/cart/update`
 
-#### Close
-
-Switches the terminal to the close screen.
+Updates the payment screen cart.
 
 ```jsonc
 {
-    "close": {}
+    "badges": [{
+        "id": 1,
+        "firstName": "",
+        "lastName": "",
+        "badgeName": "",
+        "effectiveLevel": {
+            "name": "",
+            "price": "0.00"
+        },
+        "discountedPrice": null
+    }],
+    "charityDonation": "10.00",
+    "organizationDonation": "0.00",
+    "totalDiscount": null,
+    "total": "30.00"
 }
 ```
 
-#### Clear Cart
+#### `payment/print`
 
-Clears the cart. This is automatically performed when switching modes.
+Print data to a connected Bluetooth printer.
 
 ```jsonc
 {
-    "clearCart": {}
+    "url": "https://example.com/file.pdf", // URL to PDF
+    "serialNumber": null // Printer serial number, null selects one at random
 }
 ```
 
-#### Process Payment
+#### `payment/process`
 
 Processes the payment by starting the Square Mobile Payments SDK.
 
@@ -111,35 +121,35 @@ Processes the payment by starting the Square Mobile Payments SDK.
 }
 ```
 
-#### Update Cart
+#### `payment/registration/cancel`
 
-Updates the payment screen cart.
+Cancel an on-terminal registration. No body is required.
+
+#### `payment/registration/display`
+
+Display on-site registration on the device.
 
 ```jsonc
 {
-    "updateCart": {
-        "cart": {
-            "badges": [{
-                "id": 1,
-                "firstName": "",
-                "lastName": "",
-                "badgeName": "",
-                "effectiveLevel": {
-                    "name": "",
-                    "price": "0.00"
-                },
-                "discountedPrice": null
-            }],
-            "charityDonation": "10.00",
-            "organizationDonation": "0.00",
-            "totalDiscount": null,
-            "total": "30.00"
-        }
-    }
+    "url": "https://example.com",
+    "token": ""
 }
 ```
 
-### Update Square Mobile Payments SDK Authorization
+#### `payment/state`
+
+Switches the state of the terminal. May be any string, but only the following
+values are used:
+
+* `open` - Sets terminal to accept payments
+* `close` - Sets terminal to closed screen
+
+### `payment/update/config`
+
+Updates the Terminal's configuration. The body should be the same as the data
+contained within the configuration QR code.
+
+### `payment/update/token`
 
 Update the authorization token for use with the Mobile Payments SDK.
 
@@ -147,20 +157,6 @@ Update the authorization token for use with the Mobile Payments SDK.
 {
     "updateSquareToken": {
         "accessToken": ""
-    }
-}
-```
-
-### Update Terminal Config
-
-Updates the Terminal's configuration.
-
-```jsonc
-{
-    "updateConfig": {
-        "config": {
-            // same configuration as the registration QR code
-        }
     }
 }
 ```
