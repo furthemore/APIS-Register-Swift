@@ -20,7 +20,8 @@ struct RegSetupFeature {
   @Dependency(\.square) var square
   @Dependency(\.date) var date
   @Dependency(\.uuid) var uuid
-  @Dependency(\.zebra) var zebra
+  @Dependency(\.zebraPrint) var zebraPrint
+  @Dependency(\.zebraScan) var zebraScan
 
   enum Mode: Equatable {
     case acceptPayments, close, setup
@@ -68,6 +69,7 @@ struct RegSetupFeature {
 
     var isPresentingPayment = false
     var isPresentingPrint = false
+    var isPresentingScan = false
   }
 
   @ObservableState
@@ -82,6 +84,7 @@ struct RegSetupFeature {
     var squareSetupState: SquareSetupFeature.State? = nil
     var paymentState: PaymentFeature.State? = nil
     var printState: PrintFeature.State? = nil
+    var scanState: ScanFeature.State = .init()
 
     mutating func setAlert(title: String, message: String) {
       alert = AlertState {
@@ -106,7 +109,7 @@ struct RegSetupFeature {
 
       return .run { send in
         do {
-          try await apis.notifyFrontend(config, notification)
+          try await apis.notifyFrontend(notification)
         } catch {
           await send(.setErrorMessage(title: "Notify Error", message: error.localizedDescription))
         }
@@ -130,7 +133,8 @@ struct RegSetupFeature {
     case squareTransactionCompleted(Bool)
 
     case showPrint(Bool)
-    case zebraEvent(ZebraEvent)
+    case showScan(Bool)
+    case zebraEvent(ZebraPrintEvent)
 
     case alert(PresentationAction<Alert>)
     case configAction(RegSetupConfigFeature.Action)
@@ -138,6 +142,7 @@ struct RegSetupFeature {
     case squareCheckoutAction(SquareCheckoutAction)
     case paymentAction(PaymentFeature.Action)
     case printAction(PrintFeature.Action)
+    case scanAction(ScanFeature.Action)
 
     enum Alert: Equatable {
       case dismiss
@@ -151,6 +156,10 @@ struct RegSetupFeature {
   var body: some Reducer<State, Action> {
     Scope(state: \.configState, action: \.configAction) {
       RegSetupConfigFeature()
+    }
+
+    Scope(state: \.scanState, action: \.scanAction) {
+      ScanFeature()
     }
 
     Reduce { state, action in
@@ -171,8 +180,13 @@ struct RegSetupFeature {
             }
           },
           .run { send in
-            for await event in zebra.events() {
+            for await event in zebraPrint.events() {
               await send(.zebraEvent(event))
+            }
+          },
+          .run { send in
+            for await event in zebraScan.events() {
+              await send(.scanAction(.event(event)))
             }
           }
         ).animation(.easeInOut)
@@ -358,7 +372,16 @@ struct RegSetupFeature {
         state.printState = show ? state.printState ?? .init() : nil
         return .none
 
-      case .zebraEvent, .printAction:
+      case .showScan(let show):
+        state.regState.isPresentingScan = show
+        return .none
+
+      case .scanAction(.addScan(let value)):
+        return .run { _ in
+          try! await apis.publish(.rawScan, value)
+        }
+
+      case .zebraEvent, .printAction, .scanAction:
         return .none
       }
     }
@@ -623,7 +646,7 @@ struct RegSetupFeature {
 
           let pdfData = pdf.dataRepresentation()!
 
-          try await zebra.print(pdfData, print.serialNumber)
+          try await zebraPrint.print(pdfData, print.serialNumber)
         } catch {
           await send(
             .setErrorMessage(
@@ -672,17 +695,19 @@ struct RegSetupView: View {
         status
         launch
 
-        Section("Printer") {
-          Button("Printers", systemImage: "printer") {
-            store.send(.showPrint(true))
-          }
-        }
-
-        Section("Square") {
-          Button("Square Setup", systemImage: "square") {
+        Section("Devices") {
+          Button("Square", systemImage: "square") {
             store.send(.setConfiguringSquare(true))
           }
           .disabled(store.config == nil || !store.regState.squareWasInitialized)
+
+          Button("Printers", systemImage: "printer") {
+            store.send(.showPrint(true))
+          }
+
+          Button("Scanners", systemImage: "barcode.viewfinder") {
+            store.send(.showScan(true))
+          }
         }
 
         RegSetupConfigView(
@@ -720,6 +745,18 @@ struct RegSetupView: View {
         if let store = store.scope(state: \.printState, action: \.printAction) {
           PrintView(store: store)
         }
+      }
+      .sheet(
+        isPresented: Binding(
+          get: {
+            store.regState.isPresentingScan
+          },
+          set: { newValue in
+            store.send(.showScan(newValue))
+          }
+        )
+      ) {
+        ScanView(store: store.scope(state: \.scanState, action: \.scanAction))
       }
       .fullScreenCover(
         isPresented: Binding(

@@ -1,5 +1,5 @@
 //
-//  Zebra.swift
+//  ZebraPrint.swift
 //  Register
 //
 
@@ -7,28 +7,29 @@ import Combine
 import ComposableArchitecture
 import os
 
-enum ZebraError: Error {
+enum ZebraPrintError: Error {
   case noPrinters
   case unknownPrinter
+  case failedToConnect
 }
 
-enum ZebraEvent: Equatable {
+enum ZebraPrintEvent: Equatable {
   case connected(String)
   case disconnected(String)
   case error(ZebraPrintError)
 }
 
 @DependencyClient
-struct ZebraClient {
+struct ZebraPrintClient {
   var connectedPrinters: () async -> [String] = { [] }
   var status: (String) async throws -> ZebraPrintStatus
   var print: (Data, String?) async throws -> Void
-  var events: () -> AsyncStream<ZebraEvent> = { AsyncStream.never }
+  var events: () -> AsyncStream<ZebraPrintEvent> = { AsyncStream.never }
 }
 
-extension ZebraClient: DependencyKey {
-  static var liveValue: ZebraClient {
-    let events = PassthroughSubject<ZebraEvent, Never>()
+extension ZebraPrintClient: DependencyKey {
+  static var liveValue: ZebraPrintClient {
+    let events = PassthroughSubject<ZebraPrintEvent, Never>()
     let connections = ZebraConnections(events: events)
 
     return Self(
@@ -56,12 +57,12 @@ extension ZebraClient: DependencyKey {
 private actor ZebraConnections {
   internal static let logger = Logger(subsystem: Register.bundle, category: "Zebra")
 
-  private let events: PassthroughSubject<ZebraEvent, Never>
+  private let events: PassthroughSubject<ZebraPrintEvent, Never>
   private var connections: [String: ZebraConnectedPrinter] = [:]
 
   var connectedAccessories: [String] { Array(connections.keys) }
 
-  init(events: PassthroughSubject<ZebraEvent, Never>) {
+  init(events: PassthroughSubject<ZebraPrintEvent, Never>) {
     Self.logger.debug("Creating Zebra connections manager")
 
     self.events = events
@@ -94,7 +95,7 @@ private actor ZebraConnections {
     if let connection = connections[serialNumber] {
       return try await connection.status()
     } else {
-      throw ZebraError.unknownPrinter
+      throw ZebraPrintError.unknownPrinter
     }
   }
 
@@ -110,12 +111,12 @@ private actor ZebraConnections {
       if let connection = self.connections[serialNumber] {
         return connection
       } else {
-        throw ZebraError.unknownPrinter
+        throw ZebraPrintError.unknownPrinter
       }
     } else if let connection = connections.randomElement() {
       return connection.value
     } else {
-      throw ZebraError.noPrinters
+      throw ZebraPrintError.noPrinters
     }
   }
 
@@ -169,8 +170,8 @@ private actor ZebraConnections {
 }
 
 extension DependencyValues {
-  var zebra: ZebraClient {
-    get { self[ZebraClient.self] }
-    set { self[ZebraClient.self] = newValue }
+  var zebraPrint: ZebraPrintClient {
+    get { self[ZebraPrintClient.self] }
+    set { self[ZebraPrintClient.self] = newValue }
   }
 }

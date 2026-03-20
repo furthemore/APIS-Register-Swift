@@ -51,8 +51,6 @@ struct FitToWidth: ViewModifier {
   }
 }
 
-struct ClosedView_Previews: PreviewProvider {
-  static var previews: some View {
-    ClosedView(themeColor: Register.fallbackThemeColor)
-  }
+#Preview {
+  ClosedView(themeColor: Register.fallbackThemeColor)
 }

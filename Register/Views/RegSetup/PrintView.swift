@@ -20,14 +20,14 @@ struct Printer: Identifiable, Equatable {
 
 @Reducer
 struct PrintFeature {
-  @Dependency(\.zebra) var zebra
+  @Dependency(\.zebraPrint) var zebraPrint
 
   @ObservableState
   struct State: Equatable {
     var connectedPrinters: IdentifiedArrayOf<Printer> = []
     var isRefreshing = false
 
-    mutating func refresh(zebra: ZebraClient) -> Effect<Action> {
+    mutating func refresh(zebra: ZebraPrintClient) -> Effect<Action> {
       self.isRefreshing = true
 
       return .run { send in
@@ -56,11 +56,11 @@ struct PrintFeature {
       case .appeared:
         return .merge(
           .run { send in
-            for await event in zebra.events() {
+            for await event in zebraPrint.events() {
               switch event {
               case .connected(let serialNumber):
                 await send(.addedPrinter(.init(serialNumber: serialNumber)))
-                let status = try? await zebra.status(serialNumber)
+                let status = try? await zebraPrint.status(serialNumber)
                 await send(.addedPrinter(.init(serialNumber: serialNumber, status: status)))
               case .disconnected(let serialNumber):
                 await send(.removedPrinter(serialNumber))
@@ -71,16 +71,16 @@ struct PrintFeature {
           },
           .concatenate(
             .run { send in
-              let printers = await zebra.connectedPrinters().map { Printer(serialNumber: $0) }
+              let printers = await zebraPrint.connectedPrinters().map { Printer(serialNumber: $0) }
               await send(.loadedPrinters(.init(uniqueElements: printers)))
             },
-            state.refresh(zebra: zebra)
+            state.refresh(zebra: zebraPrint)
           )
         )
         .animation(.easeInOut)
 
       case .refresh:
-        return state.refresh(zebra: zebra).animation(.easeInOut)
+        return state.refresh(zebra: zebraPrint).animation(.easeInOut)
 
       case .loadedPrinters(let printers):
         state.isRefreshing = false

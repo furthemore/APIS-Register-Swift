@@ -284,7 +284,8 @@ struct ApisClient {
   var setUpEvents: (Config) -> Effect<Result<TerminalEvent, Error>> = { _ in .none }
   var connectEvents: () async throws -> Void
   var disconnectEvents: () async throws -> Void
-  var notifyFrontend: (Config, FrontendNotification) async throws -> Void
+  var notifyFrontend: (FrontendNotification) async throws -> Void
+  var publish: (ApisMqtt.Topic, any Encodable) async throws -> Void
 }
 
 extension ApisClient: TestDependencyKey {
@@ -294,7 +295,8 @@ extension ApisClient: TestDependencyKey {
     setUpEvents: { _ in .none },
     connectEvents: {},
     disconnectEvents: {},
-    notifyFrontend: { _, _ in }
+    notifyFrontend: { _ in },
+    publish: { _, _ in }
   )
 
   static let testValue = Self()

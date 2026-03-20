@@ -57,9 +57,10 @@ extension ApisClient {
   }
 }
 
-private actor ApisMqtt {
+actor ApisMqtt {
   public enum Topic: String {
     case paymentNotification = "web/notify/payment"
+    case rawScan = "web/notify/scan/raw"
   }
 
   private let eventLoopGroup = NIOTSEventLoopGroup()
@@ -274,8 +275,11 @@ extension ApisClient: DependencyKey {
       disconnectEvents: {
         try await apisMqtt.disconnect()
       },
-      notifyFrontend: { config, notification in
+      notifyFrontend: { notification in
         try await apisMqtt.publish(notification, topic: .paymentNotification)
+      },
+      publish: { topic, body in
+        try await apisMqtt.publish(body, topic: topic)
       }
     )
   }

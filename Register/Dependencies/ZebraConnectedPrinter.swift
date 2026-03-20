@@ -5,10 +5,6 @@
 
 import ExternalAccessory
 
-enum ZebraPrintError: Error {
-  case failedToConnect
-}
-
 struct ZebraPrintStatus: Equatable {
   let isReadyToPrint: Bool
   let isHeadOpen: Bool

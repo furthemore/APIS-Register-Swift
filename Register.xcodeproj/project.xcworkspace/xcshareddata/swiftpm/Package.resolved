@@ -1,5 +1,5 @@
 {
-  "originHash" : "7dde8c647a78fdebad3a68b40c590d34ad69e12a1b3a7d8c725c0ea3a9574052",
+  "originHash" : "afd3dcffbff3301f52e3f6687b313033b32860c3161af17aea74790fa97a918b",
   "pins" : [
     {
       "identity" : "codescanner",
@@ -215,6 +215,15 @@
       "state" : {
         "revision" : "34e463e98ab8541c604af706c99bed7160f5ec70",
         "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "zebra-scanner-sdk-ios-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ZebraDevs/Zebra-Scanner-SDK-iOS-SPM",
+      "state" : {
+        "revision" : "74cb48ded129ad3e23250d54568e795b02034ee7",
+        "version" : "1.4.46"
       }
     }
   ],
